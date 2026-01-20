@@ -104,3 +104,126 @@ def test_get_maple_windows_deduplicates_by_hwnd():
         result = window_utils.get_maple_windows()
 
         assert len(result) == 1
+
+
+# Additional tests for real logic verification and edge cases
+
+
+def test_is_window_valid_converts_nonzero_to_true():
+    """Verify that any non-zero return is treated as True."""
+    import ctypes
+    if not hasattr(ctypes, 'windll'):
+        ctypes.windll = MagicMock()
+
+    with patch.object(ctypes.windll.user32, 'IsWindow', return_value=42):
+        assert window_utils.is_window_valid(12345) is True
+
+
+def test_is_window_valid_converts_zero_to_false():
+    """Verify that zero return is treated as False."""
+    import ctypes
+    if not hasattr(ctypes, 'windll'):
+        ctypes.windll = MagicMock()
+
+    with patch.object(ctypes.windll.user32, 'IsWindow', return_value=0):
+        assert window_utils.is_window_valid(12345) is False
+
+
+def test_is_window_valid_handles_os_error():
+    """Verify OSError is caught and returns False."""
+    import ctypes
+    if not hasattr(ctypes, 'windll'):
+        ctypes.windll = MagicMock()
+
+    with patch.object(ctypes.windll.user32, 'IsWindow', side_effect=OSError):
+        assert window_utils.is_window_valid(12345) is False
+
+
+def test_is_window_valid_handles_argument_error():
+    """Verify ArgumentError is caught and returns False."""
+    import ctypes
+    if not hasattr(ctypes, 'windll'):
+        ctypes.windll = MagicMock()
+
+    with patch.object(ctypes.windll.user32, 'IsWindow', side_effect=ctypes.ArgumentError):
+        assert window_utils.is_window_valid(12345) is False
+
+
+def test_flash_window_success_with_valid_hwnd():
+    """Verify flash_window returns True for valid window."""
+    import ctypes
+    if not hasattr(ctypes, 'windll'):
+        ctypes.windll = MagicMock()
+
+    with patch('window_utils.is_window_valid', return_value=True):
+        with patch.object(ctypes.windll.user32, 'FlashWindowEx'):
+            result = window_utils.flash_window(12345)
+            assert result is True
+
+
+def test_flash_window_handles_os_error():
+    """Verify flash_window handles OSError gracefully."""
+    import ctypes
+    if not hasattr(ctypes, 'windll'):
+        ctypes.windll = MagicMock()
+
+    with patch('window_utils.is_window_valid', return_value=True):
+        with patch.object(ctypes.windll.user32, 'FlashWindowEx', side_effect=OSError):
+            result = window_utils.flash_window(12345)
+            assert result is False
+
+
+def test_get_maple_windows_handles_missing_hwnd_attribute():
+    """Verify windows without _hWnd are skipped."""
+    mock_window = MagicMock()
+    mock_window.title = "MapleRoyals"
+    # Remove _hWnd to simulate hasattr check
+    del mock_window._hWnd
+
+    mock_gw = MagicMock()
+    mock_gw.getAllWindows.return_value = [mock_window]
+
+    with patch.dict(sys.modules, {'pygetwindow': mock_gw}):
+        result = window_utils.get_maple_windows()
+        assert result == []
+
+
+def test_get_maple_windows_handles_os_error_during_access():
+    """Verify OSError during position access is handled."""
+    from unittest.mock import PropertyMock
+
+    mock_window = MagicMock()
+    mock_window.title = "MapleRoyals"
+    mock_window._hWnd = 12345
+    # Make accessing position info raise OSError
+    type(mock_window).left = PropertyMock(side_effect=OSError("Window destroyed"))
+
+    mock_gw = MagicMock()
+    mock_gw.getAllWindows.return_value = [mock_window]
+
+    with patch.dict(sys.modules, {'pygetwindow': mock_gw}):
+        result = window_utils.get_maple_windows()
+        assert result == []
+
+
+def test_get_maple_windows_position_dict_structure():
+    """Verify position dict contains all required keys with correct types."""
+    mock_window = MagicMock()
+    mock_window.title = "MapleRoyals"
+    mock_window._hWnd = 999
+    mock_window.left = 1
+    mock_window.top = 2
+    mock_window.width = 3
+    mock_window.height = 4
+
+    mock_gw = MagicMock()
+    mock_gw.getAllWindows.return_value = [mock_window]
+
+    with patch.dict(sys.modules, {'pygetwindow': mock_gw}):
+        result = window_utils.get_maple_windows()
+        assert len(result) == 1
+        hwnd, title, pos = result[0]
+
+        # Test structure, not specific values
+        assert set(pos.keys()) == {'left', 'top', 'width', 'height'}
+        assert all(isinstance(v, int) for v in pos.values())
