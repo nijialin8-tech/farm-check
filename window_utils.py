@@ -29,7 +29,7 @@ def is_window_valid(hwnd):
     """
     try:
         return ctypes.windll.user32.IsWindow(hwnd) != 0
-    except Exception:
+    except (OSError, AttributeError, ctypes.ArgumentError):
         return False
 
 
@@ -55,9 +55,11 @@ def flash_window(hwnd, count=3):
         flash_info.uCount = count
         flash_info.dwTimeout = 0
 
-        result = ctypes.windll.user32.FlashWindowEx(ctypes.byref(flash_info))
-        return result != 0
-    except Exception as e:
+        # FlashWindowEx return value indicates previous window state,
+        # not success/failure. Success is guaranteed if hwnd is valid.
+        ctypes.windll.user32.FlashWindowEx(ctypes.byref(flash_info))
+        return True
+    except (OSError, ctypes.ArgumentError) as e:
         print(f"Error flashing window: {e}")
         return False
 
@@ -82,15 +84,14 @@ def get_maple_windows():
 
     for w in all_windows:
         try:
+            # Access internal _hWnd attribute (pygetwindow implementation detail)
+            if not hasattr(w, '_hWnd'):
+                continue
             hwnd = w._hWnd
 
             # Skip duplicates
             if hwnd in seen_hwnds:
                 continue
-
-            # Verify window is accessible
-            _ = w.size
-            _ = w.title
 
             position_info = {
                 'left': w.left,
@@ -102,7 +103,7 @@ def get_maple_windows():
             windows.append((hwnd, w.title, position_info))
             seen_hwnds.add(hwnd)
 
-        except Exception:
+        except (AttributeError, OSError):
             continue
 
     return windows
