@@ -6,6 +6,8 @@ import sys
 import json
 import random
 import window_utils
+import i18n
+from i18n import t  # Translation function
 
 # Windows-specific module (only available on Windows)
 try:
@@ -601,7 +603,14 @@ def command_listener():
 def main():
     global config
 
-    print("=== Timer Program ===\n")
+    # Language selection (only on first run or if not in config)
+    saved_config = load_config()
+    if saved_config and 'language' in saved_config:
+        i18n.set_language(saved_config['language'])
+    else:
+        i18n.select_language()
+
+    print(f"\n{t('program_title')}\n")
 
     # Load existing config
     existing_config = load_config()
