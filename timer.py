@@ -5,6 +5,7 @@ import os
 import sys
 import json
 import random
+import window_utils
 
 # Windows-specific module (only available on Windows)
 try:
@@ -74,81 +75,95 @@ def save_config(config):
         return False
 
 def select_windows():
-    """Let user select which MapleRoyals windows to auto-click."""
+    """
+    Let user select which MapleRoyals windows to auto-click with preview.
+    Returns list of HWNDs (integers) or None for all windows.
+    """
     if not WINDOW_AUTOMATION_AVAILABLE:
         return None
 
     try:
-        # Find all windows with 'MapleRoyals' in title
-        all_windows = [w for w in gw.getAllWindows() if 'MapleRoyals' in w.title]
+        # Get all MapleRoyals windows with HWNDs
+        windows = window_utils.get_maple_windows()
 
-        if not all_windows:
+        if not windows:
             print("  No MapleRoyals windows currently running.")
             print("  Will auto-click all MapleRoyals windows when available.")
             return None
 
-        # Filter valid windows
-        valid_windows = []
-        seen_handles = set()
+        print(f"\n  Found {len(windows)} MapleRoyals window(s):")
+        for i, (hwnd, title, pos) in enumerate(windows, 1):
+            position_str = f"at ({pos['left']}, {pos['top']})"
+            print(f"    [{i}] {title} {position_str} (HWND: {hwnd})")
 
-        for w in all_windows:
-            try:
-                if w._hWnd not in seen_handles:
-                    _ = w.size
-                    _ = w.title
-                    valid_windows.append(w)
-                    seen_handles.add(w._hWnd)
-            except:
-                continue
+        print("\n  Commands:")
+        print("    Type number (e.g., '1') to PREVIEW a window (it will flash)")
+        print("    Type '/all' to select all windows")
+        print("    Type numbers separated by commas (e.g., '1,3') to SELECT")
+        print("    Press Enter to cancel")
 
-        if not valid_windows:
-            print("  No valid MapleRoyals windows found.")
-            print("  Will auto-click all MapleRoyals windows when available.")
-            return None
+        selected_hwnds = []
 
-        print(f"\n  Found {len(valid_windows)} MapleRoyals window(s):")
-        for i, w in enumerate(valid_windows, 1):
-            print(f"    [{i}] {w.title}")
+        while True:
+            print("\n  Enter command: ", end='', flush=True)
+            selection = input().strip().lower()
 
-        print("\n  Select windows to auto-click:")
-        print("    Type '/all' for all windows")
-        print("    Or enter numbers separated by commas (e.g., '1,3' or '2')")
-        print("    Press Enter to cancel: ", end='', flush=True)
-
-        selection = input().strip().lower()
-
-        if not selection:
-            print("  Selection cancelled. Auto-click will be disabled.")
-            return False
-
-        if selection == '/all':
-            print(f"  Selected: All {len(valid_windows)} windows")
-            return None  # None means "all windows"
-
-        # Parse selection
-        try:
-            indices = [int(x.strip()) for x in selection.split(',')]
-            selected_titles = []
-
-            for idx in indices:
-                if 1 <= idx <= len(valid_windows):
-                    selected_titles.append(valid_windows[idx - 1].title)
-                else:
-                    print(f"  Warning: Invalid index {idx}, skipping")
-
-            if not selected_titles:
-                print("  No valid windows selected. Auto-click will be disabled.")
+            if not selection:
+                print("  Selection cancelled. Auto-click will be disabled.")
                 return False
 
-            print(f"  Selected {len(selected_titles)} window(s):")
-            for title in selected_titles:
-                print(f"    - {title}")
+            if selection == '/all':
+                all_hwnds = [hwnd for hwnd, _, _ in windows]
+                print(f"  Selected: All {len(all_hwnds)} windows")
+                return all_hwnds
 
-            return selected_titles
+            # Check if it's a single number (preview mode)
+            if selection.isdigit():
+                idx = int(selection)
+                if 1 <= idx <= len(windows):
+                    hwnd, title, pos = windows[idx - 1]
+                    print(f"  Flashing window [{idx}]: {title}...")
+                    if window_utils.flash_window(hwnd, count=5):
+                        print(f"  -> Window flashed! Did you see it?")
+                    else:
+                        print(f"  -> Warning: Could not flash window (may be minimized)")
+                    continue
+                else:
+                    print(f"  Invalid index: {idx}")
+                    continue
 
-        except ValueError:
-            print("  Invalid input. Auto-click will be disabled.")
-            return False
+            # Check if it's a comma-separated selection
+            if ',' in selection or selection.isdigit():
+                try:
+                    indices = [int(x.strip()) for x in selection.split(',')]
+                    selected_hwnds = []
+
+                    for idx in indices:
+                        if 1 <= idx <= len(windows):
+                            hwnd, title, _ = windows[idx - 1]
+                            selected_hwnds.append(hwnd)
+                        else:
+                            print(f"  Warning: Invalid index {idx}, skipping")
+
+                    if not selected_hwnds:
+                        print("  No valid windows selected. Try again.")
+                        continue
+
+                    print(f"  Selected {len(selected_hwnds)} window(s):")
+                    for hwnd in selected_hwnds:
+                        # Find matching window for display
+                        for h, title, pos in windows:
+                            if h == hwnd:
+                                print(f"    - {title} (HWND: {hwnd})")
+                                break
+
+                    return selected_hwnds
+
+                except ValueError:
+                    print("  Invalid input. Use numbers separated by commas.")
+                    continue
+
+            print("  Unknown command. Try again.")
 
     except Exception as e:
         print(f"  Error during window selection: {e}")
