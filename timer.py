@@ -265,7 +265,8 @@ def setup_config():
         'countdown_seconds': countdown_seconds,
         'random_offset_seconds': random_offset,
         'auto_click_windows': auto_click,
-        'selected_window_hwnds': selected_windows  # Changed from selected_window_titles
+        'selected_window_hwnds': selected_windows,
+        'language': i18n.get_current_language()
     }
 
 def click_maple_windows():
@@ -592,6 +593,14 @@ def command_listener():
                 print(f"Press [{config['stop_key']}] to STOP")
                 print(f"Countdown: {config['countdown_seconds']} seconds")
                 print("Type '/setup' to reconfigure\n")
+
+            elif cmd in ['/language', '/lang']:
+                print("\n" + "="*50)
+                i18n.select_language()
+                config['language'] = i18n.get_current_language()
+                save_config(config)
+                print(t('language_changed'))
+                print("="*50 + "\n")
 
         except EOFError:
             # Handle Ctrl+D or EOF
