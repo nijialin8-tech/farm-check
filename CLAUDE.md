@@ -186,7 +186,52 @@ if offset > 0:
 
 ---
 
-### 6. 部署問題修正：GitHub Actions 權限
+### 8. 視窗識別改進：HWND 唯一識別
+
+**用戶需求：**
+```
+自動點擊的部分因為遊戲本身可以多開，所有的名字都是一樣，有辦法找到系統上面的唯一識別碼去點嗎？
+此外我需要當滑鼠點選到指定的視窗時，他必須在前景的最上面，避免被其他視窗卡到，導致功能不能使用
+```
+
+**實作內容：**
+- ✅ 使用 Windows HWND (視窗控制碼) 作為唯一識別
+- ✅ 加入視窗預覽功能 - 任務列閃爍確認視窗
+- ✅ 啟動時驗證 HWND 是否仍有效
+- ✅ 舊設定檔自動遷移提示
+- ✅ 設定時可輸入單一數字預覽視窗（閃爍 5 次）
+- ✅ 設定時可輸入逗號分隔數字選擇多個視窗
+
+**技術細節：**
+- 使用 `pywin32` 的 `FlashWindowEx` API 實現任務列閃爍
+- 使用 `IsWindow` API 驗證 HWND 有效性
+- HWND 在視窗生命週期內保持唯一且不變
+- 視窗關閉後 HWND 失效，需重新選擇
+
+**設定流程：**
+```
+Found 3 MapleRoyals window(s):
+  [1] MapleRoyals at (0, 0) (HWND: 262148)
+  [2] MapleRoyals at (800, 0) (HWND: 131074)
+  [3] MapleRoyals at (1600, 0) (HWND: 393218)
+
+Commands:
+  Type number (e.g., '1') to PREVIEW a window (it will flash)
+  Type '/all' to select all windows
+  Type numbers separated by commas (e.g., '1,3') to SELECT
+```
+
+**設定檔格式：**
+```json
+{
+  "selected_window_hwnds": [262148, 393218],
+  "auto_click_windows": true
+}
+```
+
+---
+
+### 9. 部署問題修正：GitHub Actions 權限
 
 **問題：**
 ```
