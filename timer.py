@@ -614,16 +614,35 @@ def main():
         auto_click_status = "ENABLED" if existing_config.get('auto_click_windows', False) else "DISABLED"
         print(f"  Auto-click MapleRoyals: {auto_click_status}")
 
+        # Validate HWNDs if auto-click is enabled
+        need_reselect = False
         if existing_config.get('auto_click_windows', False):
-            selected_titles = existing_config.get('selected_window_titles')
-            if selected_titles:
-                print(f"  Selected windows ({len(selected_titles)}):")
-                for title in selected_titles:
-                    print(f"    - {title}")
-            else:
-                print(f"  Mode: Click all windows")
+            selected_hwnds = existing_config.get('selected_window_hwnds')
 
-        print("\nDo you want to reconfigure? (Type '/setup' or press Enter to skip): ", end='', flush=True)
+            # Migration: convert old format to new format
+            if selected_hwnds is None and 'selected_window_titles' in existing_config:
+                print("\n  ⚠️  Old configuration format detected (title-based)")
+                print("  Please re-select windows using new HWND-based system")
+                need_reselect = True
+            elif selected_hwnds:
+                # Validate HWNDs
+                valid_hwnds = [h for h in selected_hwnds if window_utils.is_window_valid(h)]
+
+                if len(valid_hwnds) == 0:
+                    print(f"\n  ⚠️  All selected windows are closed")
+                    print(f"  Please re-select windows")
+                    need_reselect = True
+                elif len(valid_hwnds) < len(selected_hwnds):
+                    missing = len(selected_hwnds) - len(valid_hwnds)
+                    print(f"\n  ⚠️  {missing} of {len(selected_hwnds)} selected window(s) are closed")
+                    print(f"  You may want to re-select windows")
+                else:
+                    print(f"  Selected windows: {len(selected_hwnds)} window(s) (all valid)")
+
+        if need_reselect:
+            print("\nAuto-click needs reconfiguration. Type '/setup' or press Enter to skip: ", end='', flush=True)
+        else:
+            print("\nDo you want to reconfigure? (Type '/setup' or press Enter to skip): ", end='', flush=True)
 
         choice = input().strip().lower()
 
@@ -651,16 +670,19 @@ def main():
                 'stop_key': DEFAULT_STOP_KEY,
                 'countdown_seconds': DEFAULT_COUNTDOWN_SECONDS,
                 'auto_click_windows': DEFAULT_AUTO_CLICK_WINDOWS,
-                'selected_window_titles': None
+                'selected_window_hwnds': None
             }
 
     # Ensure auto_click_windows exists in config (for backwards compatibility)
     if 'auto_click_windows' not in config:
         config['auto_click_windows'] = DEFAULT_AUTO_CLICK_WINDOWS
 
-    # Ensure selected_window_titles exists in config (for backwards compatibility)
-    if 'selected_window_titles' not in config:
-        config['selected_window_titles'] = None
+    # Ensure selected_window_hwnds exists in config (for backwards compatibility)
+    if 'selected_window_hwnds' not in config:
+        # Migration from old format
+        if 'selected_window_titles' in config:
+            del config['selected_window_titles']
+        config['selected_window_hwnds'] = None
 
     print(f"\n=== Program started ===")
     print(f"Press [{config['trigger_key']}] to START/RESET")
@@ -668,9 +690,9 @@ def main():
     print(f"Countdown: {config['countdown_seconds']} seconds")
     if config.get('auto_click_windows', False):
         print("Auto-click MapleRoyals: ENABLED")
-        selected_titles = config.get('selected_window_titles')
-        if selected_titles:
-            print(f"  Selected {len(selected_titles)} specific window(s)")
+        selected_hwnds = config.get('selected_window_hwnds')
+        if selected_hwnds:
+            print(f"  Selected {len(selected_hwnds)} specific window(s)")
         else:
             print(f"  Mode: Click all windows")
     else:
