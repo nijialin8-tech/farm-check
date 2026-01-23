@@ -263,141 +263,123 @@ def setup_config():
         'countdown_seconds': countdown_seconds,
         'random_offset_seconds': random_offset,
         'auto_click_windows': auto_click,
-        'selected_window_titles': selected_windows
+        'selected_window_hwnds': selected_windows  # Changed from selected_window_titles
     }
 
 def click_maple_windows():
     """
-    Find and click MapleRoyals windows with human-like timing.
-    Respects user's window selection from config.
+    Find and click MapleRoyals windows using stored HWNDs.
+    Validates HWNDs before clicking.
     """
     if not WINDOW_AUTOMATION_AVAILABLE:
         print("Window automation not available")
         return
 
     try:
-        # Find all windows with 'MapleRoyals' in title
-        all_windows = [w for w in gw.getAllWindows() if 'MapleRoyals' in w.title]
+        # Get all current MapleRoyals windows
+        all_windows = window_utils.get_maple_windows()
 
         if not all_windows:
             print("No MapleRoyals windows found")
             return
 
-        # Filter out invalid windows and duplicates
-        valid_windows = []
-        seen_handles = set()
+        # Get selected HWNDs from config
+        selected_hwnds = config.get('selected_window_hwnds')
 
-        for w in all_windows:
-            try:
-                # Check if window is valid and accessible
-                if w._hWnd not in seen_handles:
-                    # Try to get window rect to verify it's accessible
-                    _ = w.size
-                    _ = w.title  # Verify we can read title
-                    valid_windows.append(w)
-                    seen_handles.add(w._hWnd)
-            except:
-                continue
+        # Build hwnd -> window mapping
+        hwnd_map = {hwnd: (title, pos) for hwnd, title, pos in all_windows}
 
-        if not valid_windows:
-            print("No valid MapleRoyals windows found")
-            return
+        if selected_hwnds is not None:
+            # Validate selected HWNDs are still valid
+            valid_hwnds = [h for h in selected_hwnds if h in hwnd_map]
 
-        # Filter by user selection if configured
-        selected_titles = config.get('selected_window_titles')
-        print(f"\nDebug: selected_window_titles from config: {selected_titles}")
-        print(f"Debug: Type of selected_window_titles: {type(selected_titles)}")
-
-        if selected_titles is not None:
-            # User has selected specific windows
-            print(f"Debug: Filtering {len(valid_windows)} windows by {len(selected_titles)} selected titles")
-            windows = [w for w in valid_windows if w.title in selected_titles]
-
-            if not windows:
+            if not valid_hwnds:
                 print(f"None of the selected windows are currently running.")
-                print(f"Selected windows: {', '.join(selected_titles)}")
+                print(f"Selected HWNDs: {selected_hwnds}")
+                print(f"Available HWNDs: {list(hwnd_map.keys())}")
+                print(f"\nPlease run '/setup' to re-select windows.")
                 return
 
-            print(f"\nFound {len(windows)} of {len(selected_titles)} selected window(s)")
-            not_found = set(selected_titles) - {w.title for w in windows}
-            if not_found:
-                print(f"Not running: {', '.join(not_found)}")
+            # Check if some windows are missing
+            missing_count = len(selected_hwnds) - len(valid_hwnds)
+            if missing_count > 0:
+                print(f"\nWarning: {missing_count} selected window(s) not running")
+
+            windows_to_click = valid_hwnds
+            print(f"\nFound {len(windows_to_click)} of {len(selected_hwnds)} selected window(s)")
         else:
             # Click all windows
-            print(f"Debug: No window selection, clicking all windows")
-            windows = valid_windows
-            print(f"\nFound {len(valid_windows)} MapleRoyals window(s)")
+            windows_to_click = list(hwnd_map.keys())
+            print(f"\nFound {len(windows_to_click)} MapleRoyals window(s)")
 
         print("Starting auto-click sequence...")
 
-        # Shuffle windows to make it more human-like
-        random.shuffle(windows)
+        # Shuffle for human-like behavior
+        random.shuffle(windows_to_click)
 
-        # Calculate random delays that sum to approximately 5 seconds
+        # Calculate random delays
         total_time = 5.0
-        num_windows = len(windows)
-
-        # Generate random delays with variation
+        num_windows = len(windows_to_click)
         delays = []
         remaining_time = total_time
 
         for i in range(num_windows - 1):
-            # Random delay between 0.5 to 2.5 seconds, but ensure we don't exceed total time
             max_delay = min(2.5, remaining_time - (num_windows - i - 1) * 0.3)
             delay = random.uniform(0.5, max_delay)
             delays.append(delay)
             remaining_time -= delay
 
-        # Last delay uses remaining time (with a minimum of 0.3s)
         delays.append(max(0.3, remaining_time))
 
-        # Click each window
-        for i, window in enumerate(windows):
-            try:
-                # Use mouse to activate window (more human-like and bypasses API restrictions)
-                try:
-                    # Get window position and size
-                    window_left, window_top, window_width, window_height = window.left, window.top, window.width, window.height
+        # Click each window by HWND
+        import pygetwindow as gw
 
-                    # Add random offset to click position (±30% from center)
-                    # This makes it look more human-like
+        for i, hwnd in enumerate(windows_to_click):
+            try:
+                # Get window by HWND
+                matching_windows = [w for w in gw.getAllWindows() if w._hWnd == hwnd]
+
+                if not matching_windows:
+                    print(f"  [{i+1}/{num_windows}] Window HWND {hwnd} no longer available")
+                    continue
+
+                window = matching_windows[0]
+                title, pos = hwnd_map[hwnd]
+
+                # Activate and click window
+                try:
+                    window_left, window_top = window.left, window.top
+                    window_width, window_height = window.width, window.height
+
                     offset_x = int(random.uniform(-0.3, 0.3) * window_width)
                     offset_y = int(random.uniform(-0.3, 0.3) * window_height)
 
                     click_x = window_left + window_width // 2 + offset_x
                     click_y = window_top + window_height // 2 + offset_y
 
-                    # Move mouse to target position with human-like animation
-                    # Random duration between 0.3 to 0.8 seconds for more natural movement
                     move_duration = random.uniform(0.3, 0.8)
+
+                    import pyautogui
                     pyautogui.moveTo(click_x, click_y, duration=move_duration)
-                    
-                    # Small pause after movement (human reaction time)
                     time.sleep(random.uniform(0.05, 0.15))
-                    
-                    # Click on the position (mouse is already there)
                     pyautogui.click()
-                    time.sleep(0.2)  # Wait for window to become active
+                    time.sleep(0.2)
 
                 except Exception:
-                    # If mouse click fails, try API activate as fallback
                     try:
                         window.activate()
                         time.sleep(0.15)
                     except:
-                        print(f"  [{i+1}/{num_windows}] Warning: Could not activate '{window.title}', sending keypress anyway")
+                        print(f"  [{i+1}/{num_windows}] Warning: Could not activate HWND {hwnd}")
 
-                # Press the trigger key
                 keyboard.press_and_release(config['trigger_key'])
+                print(f"  [{i+1}/{num_windows}] Clicked: {title} (HWND: {hwnd})")
 
-                print(f"  [{i+1}/{num_windows}] Clicked: {window.title}")
-
-                # Wait before next window (except for the last one)
                 if i < len(delays):
                     time.sleep(delays[i])
 
             except Exception as e:
-                print(f"  [{i+1}/{num_windows}] Error with '{window.title}': {str(e)[:50]}... (skipped)")
+                print(f"  [{i+1}/{num_windows}] Error with HWND {hwnd}: {str(e)[:50]}...")
                 continue
 
         print("Auto-click sequence completed")
