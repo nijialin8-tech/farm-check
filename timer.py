@@ -15,7 +15,7 @@ try:
     WINSOUND_AVAILABLE = True
 except ImportError:
     WINSOUND_AVAILABLE = False
-    print("Warning: winsound not available (non-Windows system). Sound alerts disabled.")
+    print(t('warning_winsound'))
 
 try:
     import pygetwindow as gw
@@ -23,7 +23,7 @@ try:
     WINDOW_AUTOMATION_AVAILABLE = True
 except ImportError:
     WINDOW_AUTOMATION_AVAILABLE = False
-    print("Warning: pygetwindow or pyautogui not installed. Window automation disabled.")
+    print(t('warning_automation'))
 
 # --- Default settings ---
 DEFAULT_TRIGGER_KEY = 'page up'
@@ -59,7 +59,7 @@ def load_config():
             with open(config_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except Exception as e:
-            print(f"Failed to load config: {e}")
+            print(t('load_config_error', e))
             return None
     return None
 
@@ -70,10 +70,10 @@ def save_config(config):
     try:
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2, ensure_ascii=False)
-        print(f"\nSettings saved to: {config_path}")
+        print(f"\n{t('settings_saved', config_path)}")
         return True
     except Exception as e:
-        print(f"Failed to save config: {e}")
+        print(t('save_error', e))
         return False
 
 def select_windows():
@@ -89,34 +89,34 @@ def select_windows():
         windows = window_utils.get_maple_windows()
 
         if not windows:
-            print("  No MapleRoyals windows currently running.")
-            print("  Will auto-click all MapleRoyals windows when available.")
+            print(t('no_windows_running'))
+            print(t('will_click_all'))
             return None
 
-        print(f"\n  Found {len(windows)} MapleRoyals window(s):")
+        print(f"\n{t('found_windows', len(windows))}")
         for i, (hwnd, title, pos) in enumerate(windows, 1):
-            position_str = f"at ({pos['left']}, {pos['top']})"
-            print(f"    [{i}] {title} {position_str} (HWND: {hwnd})")
+            position_str = t('window_position', pos['left'], pos['top'])
+            print(t('window_info', i, title, position_str, hwnd))
 
-        print("\n  Commands:")
-        print("    Type number (e.g., '1') to PREVIEW a window (it will flash)")
-        print("    Type '/all' to select all windows")
-        print("    Type numbers separated by commas (e.g., '1,3') to SELECT")
-        print("    Press Enter to cancel")
+        print(f"\n{t('commands_title')}")
+        print(t('command_preview'))
+        print(t('command_all'))
+        print(t('command_select'))
+        print(t('command_cancel'))
 
         selected_hwnds = []
 
         while True:
-            print("\n  Enter command: ", end='', flush=True)
+            print(f"\n{t('enter_command')}: ", end='', flush=True)
             selection = input().strip().lower()
 
             if not selection:
-                print("  Selection cancelled. Auto-click will be disabled.")
+                print(t('selection_cancelled'))
                 return False
 
             if selection == '/all':
                 all_hwnds = [hwnd for hwnd, _, _ in windows]
-                print(f"  Selected: All {len(all_hwnds)} windows")
+                print(t('selected_all', len(all_hwnds)))
                 return all_hwnds
 
             # Check if it's a single number (preview mode)
@@ -124,14 +124,14 @@ def select_windows():
                 idx = int(selection)
                 if 1 <= idx <= len(windows):
                     hwnd, title, pos = windows[idx - 1]
-                    print(f"  Flashing window [{idx}]: {title}...")
+                    print(t('flashing_window', idx, title))
                     if window_utils.flash_window(hwnd, count=5):
-                        print(f"  -> Window flashed! Did you see it?")
+                        print(t('window_flashed'))
                     else:
-                        print(f"  -> Warning: Could not flash window (may be minimized)")
+                        print(t('window_flash_failed'))
                     continue
                 else:
-                    print(f"  Invalid index: {idx}")
+                    print(t('invalid_index', idx))
                     continue
 
             # Check if it's a comma-separated selection
@@ -145,97 +145,97 @@ def select_windows():
                             hwnd, title, _ = windows[idx - 1]
                             selected_hwnds.append(hwnd)
                         else:
-                            print(f"  Warning: Invalid index {idx}, skipping")
+                            print(t('invalid_warning', idx))
 
                     if not selected_hwnds:
-                        print("  No valid windows selected. Try again.")
+                        print(t('no_valid_selection'))
                         continue
 
-                    print(f"  Selected {len(selected_hwnds)} window(s):")
+                    print(t('selected_count', len(selected_hwnds)))
                     for hwnd in selected_hwnds:
                         # Find matching window for display
                         for h, title, pos in windows:
                             if h == hwnd:
-                                print(f"    - {title} (HWND: {hwnd})")
+                                print(t('window_hwnd', title, hwnd))
                                 break
 
                     return selected_hwnds
 
                 except ValueError:
-                    print("  Invalid input. Use numbers separated by commas.")
+                    print(t('invalid_input'))
                     continue
 
-            print("  Unknown command. Try again.")
+            print(t('unknown_command'))
 
     except Exception as e:
-        print(f"  Error during window selection: {e}")
-        print("  Will auto-click all MapleRoyals windows.")
+        print(t('selection_error', e))
+        print(t('will_click_all'))
         return None
 
 def setup_config():
     """Interactive setup for configuration."""
-    print("\n=== Key Configuration ===")
-    print("Please press the key you want to use (press ESC to cancel)\n")
+    print(f"\n{t('key_configuration')}")
+    print(f"{t('press_key_instruction')}\n")
 
-    print("Press the key for START/RESET timer:")
+    print(f"{t('press_start_key')}")
     trigger_key = keyboard.read_event(suppress=True)
     while trigger_key.event_type != 'down':
         trigger_key = keyboard.read_event(suppress=True)
 
     if trigger_key.name == 'esc':
-        print("Setup cancelled.")
+        print(t('setup_cancelled'))
         return None
 
     trigger_key_name = trigger_key.name
-    print(f"  -> Selected: [{trigger_key_name}]\n")
+    print(t('selected', trigger_key_name) + "\n")
 
-    print("Press the key for STOP timer:")
+    print(f"{t('press_stop_key')}")
     stop_key = keyboard.read_event(suppress=True)
     while stop_key.event_type != 'down':
         stop_key = keyboard.read_event(suppress=True)
 
     if stop_key.name == 'esc':
-        print("Setup cancelled.")
+        print(t('setup_cancelled'))
         return None
 
     stop_key_name = stop_key.name
-    print(f"  -> Selected: [{stop_key_name}]\n")
+    print(t('selected', stop_key_name) + "\n")
 
     if trigger_key_name == stop_key_name:
-        print("Error: START and STOP keys cannot be the same!")
+        print(t('same_key_error'))
         return None
 
-    print(f"Countdown seconds (press Enter for default {DEFAULT_COUNTDOWN_SECONDS}): ", end='', flush=True)
+    print(f"{t('countdown_prompt', DEFAULT_COUNTDOWN_SECONDS)}: ", end='', flush=True)
     countdown_input = input().strip()
 
     if countdown_input:
         try:
             countdown_seconds = int(countdown_input)
             if countdown_seconds <= 0:
-                print("Error: Countdown must be positive!")
+                print(t('countdown_error_positive'))
                 return None
         except ValueError:
-            print("Error: Invalid number!")
+            print(t('countdown_error_invalid'))
             return None
     else:
         countdown_seconds = DEFAULT_COUNTDOWN_SECONDS
 
-    print(f"\nRandom time offset in seconds (±N seconds to avoid detection)")
-    print(f"  Example: 5 means timer will vary between {countdown_seconds-5}~{countdown_seconds+5} seconds")
-    print(f"  Press Enter for default {DEFAULT_RANDOM_OFFSET_SECONDS}: ", end='', flush=True)
+    print(f"\n{t('random_offset_title')}")
+    print(t('random_offset_example', countdown_seconds-5, countdown_seconds+5))
+    print(f"{t('random_offset_prompt', DEFAULT_RANDOM_OFFSET_SECONDS)}: ", end='', flush=True)
     offset_input = input().strip()
 
     if offset_input:
         try:
             random_offset = int(offset_input)
             if random_offset < 0:
-                print("Error: Offset must be non-negative!")
+                print(t('offset_error_negative'))
                 return None
             if random_offset >= countdown_seconds:
-                print(f"Error: Offset must be less than countdown time ({countdown_seconds}s)!")
+                print(t('offset_error_range', f"{countdown_seconds}s"))
                 return None
         except ValueError:
-            print("Error: Invalid number!")
+            print(t('countdown_error_invalid'))
             return None
     else:
         random_offset = DEFAULT_RANDOM_OFFSET_SECONDS
@@ -245,8 +245,8 @@ def setup_config():
     selected_windows = None
 
     if WINDOW_AUTOMATION_AVAILABLE:
-        print("\nAuto-click MapleRoyals windows when timer ends?")
-        print("  Type '/enable' to enable, or press Enter to disable: ", end='', flush=True)
+        print(f"\n{t('auto_click_prompt')}")
+        print(f"{t('auto_click_enable')}: ", end='', flush=True)
         auto_click_input = input().strip().lower()
         auto_click = (auto_click_input == '/enable')
 
@@ -257,7 +257,7 @@ def setup_config():
                 auto_click = False
                 selected_windows = None
     else:
-        print("\nNote: Auto-click feature unavailable (missing dependencies)")
+        print(f"\n{t('auto_click_unavailable')}")
 
     return {
         'trigger_key': trigger_key_name,
@@ -275,7 +275,7 @@ def click_maple_windows():
     Validates HWNDs before clicking.
     """
     if not WINDOW_AUTOMATION_AVAILABLE:
-        print("Window automation not available")
+        print(t('window_automation_unavailable'))
         return
 
     try:
@@ -283,7 +283,7 @@ def click_maple_windows():
         all_windows = window_utils.get_maple_windows()
 
         if not all_windows:
-            print("No MapleRoyals windows found")
+            print(t('no_windows_found'))
             return
 
         # Get selected HWNDs from config
@@ -297,25 +297,25 @@ def click_maple_windows():
             valid_hwnds = [h for h in selected_hwnds if h in hwnd_map]
 
             if not valid_hwnds:
-                print(f"None of the selected windows are currently running.")
-                print(f"Selected HWNDs: {selected_hwnds}")
-                print(f"Available HWNDs: {list(hwnd_map.keys())}")
-                print(f"\nPlease run '/setup' to re-select windows.")
+                print(t('none_selected_running'))
+                print(t('selected_hwnds', selected_hwnds))
+                print(t('available_hwnds', list(hwnd_map.keys())))
+                print(f"\n{t('please_reselect')}")
                 return
 
             # Check if some windows are missing
             missing_count = len(selected_hwnds) - len(valid_hwnds)
             if missing_count > 0:
-                print(f"\nWarning: {missing_count} selected window(s) not running")
+                print(f"\n{t('warning_missing', missing_count)}")
 
             windows_to_click = valid_hwnds
-            print(f"\nFound {len(windows_to_click)} of {len(selected_hwnds)} selected window(s)")
+            print(f"\n{t('found_selected', len(windows_to_click), len(selected_hwnds))}")
         else:
             # Click all windows
             windows_to_click = list(hwnd_map.keys())
-            print(f"\nFound {len(windows_to_click)} MapleRoyals window(s)")
+            print(f"\n{t('found_windows', len(windows_to_click))}")
 
-        print("Starting auto-click sequence...")
+        print(t('starting_sequence'))
 
         # Shuffle for human-like behavior
         random.shuffle(windows_to_click)
@@ -343,7 +343,7 @@ def click_maple_windows():
                 matching_windows = [w for w in gw.getAllWindows() if w._hWnd == hwnd]
 
                 if not matching_windows:
-                    print(f"  [{i+1}/{num_windows}] Window HWND {hwnd} no longer available")
+                    print(t('window_unavailable', i+1, num_windows, hwnd))
                     continue
 
                 window = matching_windows[0]
@@ -373,22 +373,22 @@ def click_maple_windows():
                         window.activate()
                         time.sleep(0.15)
                     except:
-                        print(f"  [{i+1}/{num_windows}] Warning: Could not activate HWND {hwnd}")
+                        print(t('warning_activate', i+1, num_windows, hwnd))
 
                 keyboard.press_and_release(config['trigger_key'])
-                print(f"  [{i+1}/{num_windows}] Clicked: {title} (HWND: {hwnd})")
+                print(t('clicked', i+1, num_windows, title, hwnd))
 
                 if i < len(delays):
                     time.sleep(delays[i])
 
             except Exception as e:
-                print(f"  [{i+1}/{num_windows}] Error with HWND {hwnd}: {str(e)[:50]}...")
+                print(t('error_with_hwnd', i+1, num_windows, hwnd, str(e)[:50]))
                 continue
 
-        print("Auto-click sequence completed")
+        print(t('sequence_completed'))
 
     except Exception as e:
-        print(f"Error in click_maple_windows: {e}")
+        print(t('error_in_click', e))
 
 def show_progress():
     """Display progress bar while timer is running."""
@@ -419,7 +419,7 @@ def show_progress():
 
 def play_sound():
     """Play system default sound."""
-    print(f"\n\nTime's up! Playing sound...")
+    print(f"\n\n{t('times_up')}")
     if WINSOUND_AVAILABLE:
         # MB_ICONEXCLAMATION produces a standard system alert sound
         winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
@@ -433,13 +433,13 @@ def on_timeout():
 
     # Execute auto-click if enabled
     if config.get('auto_click_windows', False):
-        print("\nAuto-click is enabled. Clicking MapleRoyals windows...")
+        print(f"\n{t('auto_click_enabled')}")
         click_maple_windows()
 
     # Auto-restart countdown with ESC to cancel
     print("\n" + "="*50)
-    print("Timer will auto-restart in 5 seconds...")
-    print("Press ESC to configure settings, or wait to auto-restart")
+    print(t('will_auto_restart'))
+    print(t('press_esc_configure'))
     print("="*50)
 
     # Check for ESC key for 5 seconds
@@ -449,22 +449,22 @@ def on_timeout():
 
     while time.time() - start_wait < wait_duration:
         remaining = wait_duration - (time.time() - start_wait)
-        print(f"\rAuto-restarting in {remaining:.1f}s... (Press ESC to cancel)", end='', flush=True)
+        print(f"\r{t('auto_restarting_in', remaining)}", end='', flush=True)
 
         # Check if ESC is pressed
         if keyboard.is_pressed('esc'):
             esc_pressed = True
-            print("\n\nESC pressed! Configuration menu:")
+            print(f"\n\n{t('esc_pressed')}")
             break
 
         time.sleep(0.1)
 
     if esc_pressed:
         # User wants to configure
-        print("\n1. Type a number to adjust countdown seconds")
-        print("2. Type '/setup' to reconfigure all settings")
-        print("3. Press Enter to restart timer with current settings")
-        print("\nYour choice: ", end='', flush=True)
+        print(f"\n{t('config_menu_1')}")
+        print(t('config_menu_2'))
+        print(t('config_menu_3'))
+        print(f"\n{t('your_choice')}: ", end='', flush=True)
 
         choice = input().strip()
 
@@ -475,28 +475,28 @@ def on_timeout():
             if new_config:
                 config = new_config
                 save_config(config)
-                print("\nConfiguration updated successfully!")
+                print(f"\n{t('config_updated')}")
             else:
-                print("\nSetup cancelled. Keeping current configuration.")
+                print(f"\n{t('setup_cancelled_keeping')}")
             # Re-register hotkeys
             register_hotkeys()
-            print(f"\nPress [{config['trigger_key']}] to start timer")
+            print(f"\n{t('press_to_start', config['trigger_key'])}")
 
         elif choice.isdigit():
             new_countdown = int(choice)
             if new_countdown > 0:
                 config['countdown_seconds'] = new_countdown
                 save_config(config)
-                print(f"Countdown updated to {new_countdown} seconds.")
+                print(t('countdown_updated', new_countdown))
                 start_timer()
             else:
-                print("Invalid time. Press trigger key to restart.")
+                print(t('invalid_time'))
         else:
             # Just restart with current settings
             start_timer()
     else:
         # Auto-restart
-        print("\n\nAuto-restarting timer...")
+        print(f"\n\n{t('auto_restarting_now')}")
         start_timer()
 
 def start_timer():
@@ -517,10 +517,10 @@ def start_timer():
         # Random offset between -offset and +offset
         random_offset = random.randint(-offset, offset)
         actual_countdown = base_time + random_offset
-        print(f"\n[RESET] Timer started: {actual_countdown}s (base: {base_time}s, offset: {random_offset:+d}s)")
+        print(f"\n{t('timer_started', actual_countdown, base_time, random_offset)}")
     else:
         actual_countdown = base_time
-        print(f"\n[RESET] Timer started: {actual_countdown} seconds...")
+        print(f"\n{t('timer_started_simple', actual_countdown)}")
 
     # Start timer and progress bar
     timer_start_time = time.time()
@@ -541,7 +541,7 @@ def stop_timer():
     stop_progress = True
     timer_start_time = None
 
-    print("\n[STOP] Timer cancelled.")
+    print(f"\n{t('timer_cancelled')}")
 
 def register_hotkeys():
     """Register all hotkeys."""
@@ -566,7 +566,7 @@ def command_listener():
 
             if cmd == '/setup':
                 print("\n" + "="*50)
-                print("Entering setup mode...")
+                print(t('entering_setup'))
                 print("="*50)
 
                 # Temporarily unregister hotkeys
@@ -581,18 +581,18 @@ def command_listener():
                 if new_config:
                     config = new_config
                     save_config(config)
-                    print("\nConfiguration updated successfully!")
+                    print(f"\n{t('config_updated')}")
                 else:
-                    print("\nSetup cancelled. Keeping current configuration.")
+                    print(f"\n{t('setup_cancelled_keeping')}")
 
                 # Re-register hotkeys with new or existing config
                 register_hotkeys()
 
-                print(f"\n=== Program resumed ===")
-                print(f"Press [{config['trigger_key']}] to START/RESET")
-                print(f"Press [{config['stop_key']}] to STOP")
-                print(f"Countdown: {config['countdown_seconds']} seconds")
-                print("Type '/setup' to reconfigure\n")
+                print(f"\n{t('program_resumed')}")
+                print(t('press_to_start', config['trigger_key']))
+                print(t('press_to_stop', config['stop_key']))
+                print(t('countdown_display', config['countdown_seconds']))
+                print(f"{t('type_setup')}\n")
 
             elif cmd in ['/language', '/lang']:
                 print("\n" + "="*50)
@@ -625,12 +625,12 @@ def main():
     existing_config = load_config()
 
     if existing_config:
-        print("Found existing configuration:")
-        print(f"  START/RESET: [{existing_config['trigger_key']}]")
-        print(f"  STOP: [{existing_config['stop_key']}]")
-        print(f"  Countdown: {existing_config['countdown_seconds']} seconds")
-        auto_click_status = "ENABLED" if existing_config.get('auto_click_windows', False) else "DISABLED"
-        print(f"  Auto-click MapleRoyals: {auto_click_status}")
+        print(t('found_config'))
+        print(t('config_start_reset', existing_config['trigger_key']))
+        print(t('config_stop', existing_config['stop_key']))
+        print(t('config_countdown', existing_config['countdown_seconds']))
+        auto_click_status = t('enabled') if existing_config.get('auto_click_windows', False) else t('disabled')
+        print(t('config_auto_click', auto_click_status))
 
         # Validate HWNDs if auto-click is enabled
         need_reselect = False
@@ -639,28 +639,28 @@ def main():
 
             # Migration: convert old format to new format
             if selected_hwnds is None and 'selected_window_titles' in existing_config:
-                print("\n  ⚠️  Old configuration format detected (title-based)")
-                print("  Please re-select windows using new HWND-based system")
+                print(f"\n{t('old_config_detected')}")
+                print(t('reselect_prompt'))
                 need_reselect = True
             elif selected_hwnds:
                 # Validate HWNDs
                 valid_hwnds = [h for h in selected_hwnds if window_utils.is_window_valid(h)]
 
                 if len(valid_hwnds) == 0:
-                    print(f"\n  ⚠️  All selected windows are closed")
-                    print(f"  Please re-select windows")
+                    print(f"\n{t('all_windows_closed')}")
+                    print(t('reselect_prompt'))
                     need_reselect = True
                 elif len(valid_hwnds) < len(selected_hwnds):
                     missing = len(selected_hwnds) - len(valid_hwnds)
-                    print(f"\n  ⚠️  {missing} of {len(selected_hwnds)} selected window(s) are closed")
-                    print(f"  You may want to re-select windows")
+                    print(f"\n{t('some_windows_closed', missing, len(selected_hwnds))}")
+                    print(t('may_want_reselect'))
                 else:
-                    print(f"  Selected windows: {len(selected_hwnds)} window(s) (all valid)")
+                    print(t('selected_windows', len(selected_hwnds)))
 
         if need_reselect:
-            print("\nAuto-click needs reconfiguration. Type '/setup' or press Enter to skip: ", end='', flush=True)
+            print(f"\n{t('needs_reconfiguration')}: ", end='', flush=True)
         else:
-            print("\nDo you want to reconfigure? (Type '/setup' or press Enter to skip): ", end='', flush=True)
+            print(f"\n{t('want_reconfigure')}: ", end='', flush=True)
 
         choice = input().strip().lower()
 
@@ -670,19 +670,19 @@ def main():
                 config = new_config
                 save_config(config)
             else:
-                print("Using existing configuration...")
+                print(f"{t('using_existing')}")
                 config = existing_config
         else:
             config = existing_config
     else:
-        print("No configuration found. Please set up your keys.\n")
+        print(f"{t('no_config_found')}\n")
         new_config = setup_config()
 
         if new_config:
             config = new_config
             save_config(config)
         else:
-            print("Setup failed. Using defaults.")
+            print(t('setup_failed'))
             config = {
                 'trigger_key': DEFAULT_TRIGGER_KEY,
                 'stop_key': DEFAULT_STOP_KEY,
@@ -702,20 +702,20 @@ def main():
             del config['selected_window_titles']
         config['selected_window_hwnds'] = None
 
-    print(f"\n=== Program started ===")
-    print(f"Press [{config['trigger_key']}] to START/RESET")
-    print(f"Press [{config['stop_key']}] to STOP")
-    print(f"Countdown: {config['countdown_seconds']} seconds")
+    print(f"\n{t('program_started')}")
+    print(t('press_to_start', config['trigger_key']))
+    print(t('press_to_stop', config['stop_key']))
+    print(t('countdown_display', config['countdown_seconds']))
     if config.get('auto_click_windows', False):
-        print("Auto-click MapleRoyals: ENABLED")
+        print(t('auto_click_status', t('enabled')))
         selected_hwnds = config.get('selected_window_hwnds')
         if selected_hwnds:
-            print(f"  Selected {len(selected_hwnds)} specific window(s)")
+            print(t('selected_specific', len(selected_hwnds)))
         else:
-            print(f"  Mode: Click all windows")
+            print(t('mode_all_windows'))
     else:
-        print("Auto-click MapleRoyals: DISABLED")
-    print("Type '/setup' to reconfigure\n")
+        print(t('auto_click_status', t('disabled')))
+    print(f"{t('type_setup')}\n")
 
     register_hotkeys()
 
@@ -727,7 +727,7 @@ def main():
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\nProgram terminated.")
+        print(f"\n{t('program_terminated')}")
 
 if __name__ == "__main__":
     main()

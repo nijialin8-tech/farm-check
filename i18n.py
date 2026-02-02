@@ -145,6 +145,12 @@ LANGUAGES = {
         # Language switching
         'language_changed': 'Language changed to English.',
         'language_command_help': "Type '/language' or '/lang' to change language",
+
+        # Warnings and errors
+        'warning_winsound': 'Warning: winsound not available (non-Windows system). Sound alerts disabled.',
+        'warning_automation': 'Warning: pygetwindow or pyautogui not installed. Window automation disabled.',
+        'load_config_error': 'Failed to load config: {}',
+        'invalid_warning': 'Warning: Invalid index {}, skipping',
     },
     'zh_TW': {
         # Language selection
@@ -290,6 +296,12 @@ LANGUAGES = {
         # Language switching
         'language_changed': '語言已切換為繁體中文。',
         'language_command_help': "輸入 '/language' 或 '/lang' 切換語言",
+
+        # Warnings and errors
+        'warning_winsound': '警告：winsound 不可用（非 Windows 系統）。音效警報已停用。',
+        'warning_automation': '警告：pygetwindow 或 pyautogui 未安裝。視窗自動化已停用。',
+        'load_config_error': '載入設定失敗：{}',
+        'invalid_warning': '警告：無效的索引 {}，跳過',
     }
 }
 
