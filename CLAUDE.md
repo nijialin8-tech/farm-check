@@ -252,16 +252,90 @@ jobs:
 
 ---
 
+### 10. 國際化功能：多語言支援
+
+**用戶需求：**
+```
+最前面可以設定一個語系嗎？
+1&2就好（繁體中文 + 英文，含啟動選擇和執行中切換）
+```
+
+**實作內容：**
+- ✅ 建立 `i18n.py` 國際化模組
+  - 支援繁體中文 (zh_TW) 和英文 (en)
+  - 超過 200 個翻譯字串
+  - 統一的翻譯函式 `t(key, *args)`
+- ✅ 程式啟動時語言選擇
+  - 首次啟動時詢問語言偏好
+  - 語言設定儲存至 `timer_config.json`
+  - 下次啟動自動載入已儲存的語言
+- ✅ 執行中切換語言
+  - 新增 `/language` 或 `/lang` 指令
+  - 即時切換語言並儲存設定
+  - 所有介面文字立即更新
+- ✅ 全面翻譯
+  - 所有 print 語句改用 `t()` 函式
+  - 包含錯誤訊息、警告、提示等
+  - 支援帶參數的翻譯字串
+
+**技術細節：**
+```python
+# i18n.py 核心結構
+LANGUAGES = {
+    'en': { 'key': 'English translation', ... },
+    'zh_TW': { 'key': '繁體中文翻譯', ... }
+}
+
+def t(key, *args):
+    """翻譯函式，支援格式化參數"""
+    text = LANGUAGES[current_lang].get(key, key)
+    return text.format(*args) if args else text
+
+def select_language():
+    """互動式語言選擇"""
+    # 顯示語言選項並讓用戶選擇
+```
+
+**使用範例：**
+```python
+# 簡單翻譯
+print(t('program_title'))  # 輸出: "=== 計時器程式 ===" 或 "=== Timer Program ==="
+
+# 帶參數翻譯
+print(t('press_to_start', 'F1'))  # 輸出: "按 [F1] 開始/重置" 或 "Press [F1] to START/RESET"
+```
+
+**設定檔格式：**
+```json
+{
+  "trigger_key": "page up",
+  "stop_key": "page down",
+  "countdown_seconds": 130,
+  "random_offset_seconds": 5,
+  "auto_click_windows": true,
+  "selected_window_hwnds": [123456, 789012],
+  "language": "zh_TW"
+}
+```
+
+---
+
 ## 檔案結構
 
 ```
 farm-check-rms/
 ├── timer.py                  # 主程式
+├── i18n.py                   # 國際化模組
+├── window_utils.py           # 視窗工具模組
 ├── requirements.txt          # Python 相依套件
 ├── timer_config.json        # 使用者設定檔（自動產生，已加入 .gitignore）
 ├── README.md                # 使用說明
 ├── CLAUDE.md                # 開發文件（本檔案）
 ├── .gitignore               # Git 忽略檔案
+├── docs/
+│   └── plans/               # 實作計畫文件
+├── tests/
+│   └── test_window_utils.py # 視窗工具測試
 └── .github/
     └── workflows/
         └── build.yml        # GitHub Actions 自動打包設定
@@ -277,6 +351,14 @@ farm-check-rms/
 - [x] 啟動時詢問是否重新設定
 - [x] 執行中輸入 `/setup` 重新設定
 - [x] 時間到後快速調整倒數時間
+- [x] 語言選擇與切換
+
+### 語言與國際化
+- [x] 繁體中文 (zh_TW) 與英文 (en) 雙語支援
+- [x] 程式啟動時語言選擇
+- [x] 執行中使用 `/language` 或 `/lang` 切換語言
+- [x] 語言偏好儲存至設定檔
+- [x] 超過 200 個翻譯字串
 
 ### 計時功能
 - [x] 自訂倒數秒數（預設 130 秒）
