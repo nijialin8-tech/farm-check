@@ -1,0 +1,9 @@
+{
+  "version": "1.1.1",
+  "files": [
+    "timer.py",
+    "i18n.py",
+    "window_utils.py"
+  ],
+  "changelog": "Implemented OTA auto-patch and Alt+Esc human-like simulation."
+}

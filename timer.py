@@ -7,6 +7,7 @@ import json
 import random
 import window_utils
 import i18n
+import ota
 from i18n import t  # Translation function
 
 # Windows-specific module (only available on Windows)
@@ -668,6 +669,9 @@ def command_listener():
 
 def main():
     global config
+
+    # OTA check
+    ota.run_ota_flow()
 
     # Language selection (only on first run or if not in config)
     saved_config = load_config()

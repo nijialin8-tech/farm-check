@@ -154,8 +154,17 @@ LANGUAGES = {
         'language_changed': 'Language changed to English.',
         'language_command_help': "Type '/language' or '/lang' to change language",
 
-        # Warnings and errors
-        'warning_winsound': 'Warning: winsound not available (non-Windows system). Sound alerts disabled.',
+        # OTA
+        'checking_updates': 'Checking for updates (current: {})...',
+        'new_version_found': 'New version found: {}!',
+        'already_latest': 'You are already running the latest version.',
+        'update_check_failed': 'Failed to check for updates: {}',
+        'starting_patch': 'Starting OTA patch...',
+        'patch_applied_success': 'Patch applied successfully!',
+        'patch_failed': 'Patch failed: {}',
+        'update_prompt': 'A newer version is available. Would you like to update?',
+        'update_choice_prompt': 'Update now? [Y/n]: ',
+        'restarting_program': 'Restarting program to apply updates...',
         'warning_automation': 'Warning: pygetwindow or pyautogui not installed. Window automation disabled.',
         'load_config_error': 'Failed to load config: {}',
         'invalid_warning': 'Warning: Invalid index {}, skipping',
@@ -313,8 +322,17 @@ LANGUAGES = {
         'language_changed': '語言已切換為繁體中文。',
         'language_command_help': "輸入 '/language' 或 '/lang' 切換語言",
 
-        # Warnings and errors
-        'warning_winsound': '警告：winsound 不可用（非 Windows 系統）。音效警報已停用。',
+        # OTA
+        'checking_updates': '正在檢查更新 (目前版本: {})...',
+        'new_version_found': '發現新版本: {}!',
+        'already_latest': '目前的預設腳本已是最新版本。',
+        'update_check_failed': '更新檢查失敗: {}',
+        'starting_patch': '正在執行 OTA 線上更新 (Patch)...',
+        'patch_applied_success': '更新成功！檔案已完成覆蓋。',
+        'patch_failed': '更新失敗: {}',
+        'update_prompt': '發現較新的程式版本，建議立即更新以獲取最新功能。',
+        'update_choice_prompt': '是否立即執行更新？ [Y/n]: ',
+        'restarting_program': '正在重啟程式以套用更新...',
         'warning_automation': '警告：pygetwindow 或 pyautogui 未安裝。視窗自動化已停用。',
         'load_config_error': '載入設定失敗：{}',
         'invalid_warning': '警告：無效的索引 {}，跳過',
