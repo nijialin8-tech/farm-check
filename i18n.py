@@ -160,6 +160,10 @@ LANGUAGES = {
         'warning_automation': 'Warning: pygetwindow or pyautogui not installed. Window automation disabled.',
         'load_config_error': 'Failed to load config: {}',
         'invalid_warning': 'Warning: Invalid index {}, skipping',
+
+        # Mouse Speed
+        'mouse_speed_prompt': 'Mouse moving speed (1: Slow, 2: Normal, 3: Fast, 4: Instant) [Default: 2]',
+        'mouse_speed_updated': 'Mouse speed set to: {}',
     },
     'zh_TW': {
         # Language selection
@@ -320,6 +324,10 @@ LANGUAGES = {
         'warning_automation': '警告：pygetwindow 或 pyautogui 未安裝。視窗自動化已停用。',
         'load_config_error': '載入設定失敗：{}',
         'invalid_warning': '警告：無效的索引 {}，跳過',
+
+        # Mouse Speed
+        'mouse_speed_prompt': '滑鼠移動速度 (1: 慢, 2: 正常, 3: 快, 4: 極快) [預設: 2]',
+        'mouse_speed_updated': '滑鼠移動速度已設為: {}',
     }
 }
 

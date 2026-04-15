@@ -279,6 +279,17 @@ def click_maple_windows():
         print(t('window_automation_unavailable'))
         return
 
+    # Mouse speed level mapping (duration in seconds)
+    speed_map = {
+        1: 1.0,    # Slow
+        2: 0.5,    # Normal
+        3: 0.2,    # Fast
+        4: 0.05    # Instant
+    }
+    
+    speed_level = config.get('mouse_speed_level', DEFAULT_MOUSE_SPEED_LEVEL)
+    base_duration = speed_map.get(speed_level, 0.5)
+
     try:
         # Get all current MapleRoyals windows
         all_windows = window_utils.get_maple_windows()
