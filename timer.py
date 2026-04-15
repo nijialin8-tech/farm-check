@@ -7,6 +7,7 @@ import json
 import random
 import window_utils
 import i18n
+import ota
 from i18n import t  # Translation function
 
 # Windows-specific module (only available on Windows)
@@ -277,6 +278,17 @@ def click_maple_windows():
     if not WINDOW_AUTOMATION_AVAILABLE:
         print(t('window_automation_unavailable'))
         return
+
+    # Mouse speed level mapping (duration in seconds)
+    speed_map = {
+        1: 1.0,    # Slow
+        2: 0.5,    # Normal
+        3: 0.2,    # Fast
+        4: 0.05    # Instant
+    }
+    
+    speed_level = config.get('mouse_speed_level', DEFAULT_MOUSE_SPEED_LEVEL)
+    base_duration = speed_map.get(speed_level, 0.5)
 
     try:
         # Get all current MapleRoyals windows
@@ -612,6 +624,9 @@ def command_listener():
 def main():
     global config
 
+    # OTA check
+    ota.run_ota_flow()
+
     # Language selection (only on first run or if not in config)
     saved_config = load_config()
     if saved_config and 'language' in saved_config:
@@ -629,6 +644,7 @@ def main():
         print(t('config_start_reset', existing_config['trigger_key']))
         print(t('config_stop', existing_config['stop_key']))
         print(t('config_countdown', existing_config['countdown_seconds']))
+        
         auto_click_status = t('enabled') if existing_config.get('auto_click_windows', False) else t('disabled')
         print(t('config_auto_click', auto_click_status))
 
@@ -691,13 +707,10 @@ def main():
                 'selected_window_hwnds': None
             }
 
-    # Ensure auto_click_windows exists in config (for backwards compatibility)
+    # Ensure focus on auto_click and selected_window_hwnds
     if 'auto_click_windows' not in config:
         config['auto_click_windows'] = DEFAULT_AUTO_CLICK_WINDOWS
-
-    # Ensure selected_window_hwnds exists in config (for backwards compatibility)
     if 'selected_window_hwnds' not in config:
-        # Migration from old format
         if 'selected_window_titles' in config:
             del config['selected_window_titles']
         config['selected_window_hwnds'] = None
@@ -706,6 +719,7 @@ def main():
     print(t('press_to_start', config['trigger_key']))
     print(t('press_to_stop', config['stop_key']))
     print(t('countdown_display', config['countdown_seconds']))
+    
     if config.get('auto_click_windows', False):
         print(t('auto_click_status', t('enabled')))
         selected_hwnds = config.get('selected_window_hwnds')
@@ -715,6 +729,7 @@ def main():
             print(t('mode_all_windows'))
     else:
         print(t('auto_click_status', t('disabled')))
+        
     print(f"{t('type_setup')}\n")
 
     register_hotkeys()
