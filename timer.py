@@ -32,7 +32,6 @@ DEFAULT_STOP_KEY = 'page down'
 DEFAULT_COUNTDOWN_SECONDS = 130
 DEFAULT_RANDOM_OFFSET_SECONDS = 0
 DEFAULT_AUTO_CLICK_WINDOWS = False
-DEFAULT_AUTO_SWITCH_WINDOWS = False
 CONFIG_FILE = 'timer_config.json'
 # -----------------------
 
@@ -261,67 +260,15 @@ def setup_config():
     else:
         print(f"\n{t('auto_click_unavailable')}")
 
-    # Ask about auto-switch feature (Alt+Esc)
-    print(f"\n{t('auto_switch_prompt')}")
-    print(f"{t('auto_switch_enable')}: ", end='', flush=True)
-    auto_switch_input = input().strip().lower()
-    auto_switch = (auto_switch_input == '/enable')
-
     return {
         'trigger_key': trigger_key_name,
         'stop_key': stop_key_name,
         'countdown_seconds': countdown_seconds,
         'random_offset_seconds': random_offset,
         'auto_click_windows': auto_click,
-        'auto_switch_windows': auto_switch,
         'selected_window_hwnds': selected_windows,
         'language': i18n.get_current_language()
     }
-
-def switch_maple_windows():
-    """
-    Simulate human behavior to switch through windows using Alt+Esc.
-    Uses random delays between key presses and cycles.
-    """
-    try:
-        # Get count of windows to switch
-        # If specific windows selected, count them. Otherwise count all current Maple windows.
-        selected_hwnds = config.get('selected_window_hwnds')
-        if selected_hwnds:
-            # Validate they still exist
-            current_windows = window_utils.get_maple_windows()
-            current_hwnds = [h for h, _, _ in current_windows]
-            num_windows = len([h for h in selected_hwnds if h in current_hwnds])
-        else:
-            num_windows = len(window_utils.get_maple_windows())
-
-        if num_windows == 0:
-            return
-
-        print(f"\n{t('auto_switch_enabled')}")
-        
-        # We perform Alt+Esc for each window
-        for i in range(num_windows):
-            print(t('switching_windows', i + 1, num_windows))
-            
-            # Simulate real human timing: Alt down -> delay -> Esc down -> delay -> Esc up -> delay -> Alt up
-            keyboard.press('alt')
-            time.sleep(random.uniform(0.05, 0.15))
-            
-            keyboard.press('esc')
-            time.sleep(random.uniform(0.03, 0.08))
-            
-            keyboard.release('esc')
-            time.sleep(random.uniform(0.04, 0.12))
-            
-            keyboard.release('alt')
-            
-            # Delay between switching to different windows
-            if i < num_windows - 1:
-                time.sleep(random.uniform(0.6, 1.4))
-
-    except Exception as e:
-        print(f"\nError in switch_maple_windows: {e}")
 
 def click_maple_windows():
     """
@@ -484,10 +431,6 @@ def play_sound():
 def on_timeout():
     global config
     play_sound()
-
-    # Execute auto-switch if enabled
-    if config.get('auto_switch_windows', False):
-        switch_maple_windows()
 
     # Execute auto-click if enabled
     if config.get('auto_click_windows', False):
@@ -693,9 +636,6 @@ def main():
         
         auto_click_status = t('enabled') if existing_config.get('auto_click_windows', False) else t('disabled')
         print(t('config_auto_click', auto_click_status))
-        
-        auto_switch_status = t('enabled') if existing_config.get('auto_switch_windows', False) else t('disabled')
-        print(t('config_auto_switch', auto_switch_status))
 
         # Validate HWNDs if auto-click is enabled
         need_reselect = False
@@ -753,15 +693,12 @@ def main():
                 'stop_key': DEFAULT_STOP_KEY,
                 'countdown_seconds': DEFAULT_COUNTDOWN_SECONDS,
                 'auto_click_windows': DEFAULT_AUTO_CLICK_WINDOWS,
-                'auto_switch_windows': DEFAULT_AUTO_SWITCH_WINDOWS,
                 'selected_window_hwnds': None
             }
 
-    # Ensure all config keys exist (for backwards compatibility)
+    # Ensure focus on auto_click and selected_window_hwnds
     if 'auto_click_windows' not in config:
         config['auto_click_windows'] = DEFAULT_AUTO_CLICK_WINDOWS
-    if 'auto_switch_windows' not in config:
-        config['auto_switch_windows'] = DEFAULT_AUTO_SWITCH_WINDOWS
     if 'selected_window_hwnds' not in config:
         if 'selected_window_titles' in config:
             del config['selected_window_titles']
@@ -772,11 +709,6 @@ def main():
     print(t('press_to_stop', config['stop_key']))
     print(t('countdown_display', config['countdown_seconds']))
     
-    if config.get('auto_switch_windows', False):
-        print(t('auto_switch_status', t('enabled')))
-    else:
-        print(t('auto_switch_status', t('disabled')))
-
     if config.get('auto_click_windows', False):
         print(t('auto_click_status', t('enabled')))
         selected_hwnds = config.get('selected_window_hwnds')

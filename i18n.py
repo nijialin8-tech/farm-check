@@ -38,13 +38,6 @@ LANGUAGES = {
         'auto_click_enable': "  Type '/enable' to enable, or press Enter to disable",
         'auto_click_unavailable': 'Note: Auto-click feature unavailable (missing dependencies)',
 
-        # Auto-switch
-        'auto_switch_prompt': 'Auto-switch windows (Alt+Esc) when timer ends?',
-        'auto_switch_enable': "  Type '/enable' to enable, or press Enter to disable",
-        'auto_switch_status': 'Auto-switch windows: {}',
-        'auto_switch_enabled': 'Auto-switch is enabled. Executing Alt+Esc sequence...',
-        'switching_windows': '  [{}/{}] Executing Alt+Esc sequence...',
-
         # Window selection
         'no_windows_running': '  No MapleRoyals windows currently running.',
         'will_click_all': '  Will auto-click all MapleRoyals windows when available.',
@@ -80,7 +73,6 @@ LANGUAGES = {
         'config_stop': '  STOP: [{}]',
         'config_countdown': '  Countdown: {} seconds',
         'config_auto_click': '  Auto-click MapleRoyals: {}',
-        'config_auto_switch': '  Auto-switch windows: {}',
         'enabled': 'ENABLED',
         'disabled': 'DISABLED',
         'selected_windows': '  Selected windows: {} window(s) (all valid)',
@@ -206,13 +198,6 @@ LANGUAGES = {
         'auto_click_enable': "  輸入 '/enable' 啟用，或按 Enter 停用",
         'auto_click_unavailable': '注意：自動點擊功能無法使用（缺少相依套件）',
 
-        # Auto-switch
-        'auto_switch_prompt': '計時結束時自動切換視窗 (Alt+Esc)？',
-        'auto_switch_enable': "  輸入 '/enable' 啟用，或按 Enter 停用",
-        'auto_switch_status': '自動切換視窗：{}',
-        'auto_switch_enabled': '自動切換已啟用。正在執行 Alt+Esc 序列...',
-        'switching_windows': '  [{}/{}] 正在執行 Alt+Esc 序列...',
-
         # Window selection
         'no_windows_running': '  目前沒有執行中的 MapleRoyals 視窗。',
         'will_click_all': '  將會自動點擊所有可用的 MapleRoyals 視窗。',
@@ -248,7 +233,6 @@ LANGUAGES = {
         'config_stop': '  停止：[{}]',
         'config_countdown': '  倒數：{} 秒',
         'config_auto_click': '  自動點擊 MapleRoyals：{}',
-        'config_auto_switch': '  自動切換視窗：{}',
         'enabled': '已啟用',
         'disabled': '已停用',
         'selected_windows': '  已選擇視窗：{} 個視窗（全部有效）',
