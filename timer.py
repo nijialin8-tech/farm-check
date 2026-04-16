@@ -278,6 +278,17 @@ def setup_config():
     except ValueError:
         switch_interval = DEFAULT_SWITCH_INTERVAL
 
+    # Ask about attack key
+    print(f"\n{t('attack_key_prompt')}: ", end='', flush=True)
+    attack_key_event = keyboard.read_event(suppress=True)
+    while attack_key_event.event_type != 'down':
+        attack_key_event = keyboard.read_event(suppress=True)
+    
+    # Use Enter (name='enter') as skipped indicator
+    attack_key = None if attack_key_event.name == 'enter' else attack_key_event.name
+    if attack_key:
+        print(t('selected', attack_key))
+
     return {
         'trigger_key': trigger_key_name,
         'stop_key': stop_key_name,
@@ -287,6 +298,7 @@ def setup_config():
         'auto_switch_windows': auto_switch,
         'selected_window_hwnds': selected_windows,
         'switch_interval_base': switch_interval,
+        'attack_key': attack_key,
         'language': i18n.get_current_language()
     }
 
@@ -309,6 +321,7 @@ def switch_maple_windows():
         return
 
     base_interval = config.get('switch_interval_base', DEFAULT_SWITCH_INTERVAL)
+    attack_key = config.get('attack_key')
 
     print(t('starting_switch_sequence', num_cycles))
 
@@ -328,6 +341,16 @@ def switch_maple_windows():
         
         # Alt UP
         keyboard.release('alt')
+        
+        # Small delay after switch to "focus" before attack
+        time.sleep(random.uniform(0.15, 0.35))
+        
+        # Optional attack key
+        if attack_key:
+            print(t('pressing_attack_key', attack_key))
+            keyboard.press(attack_key)
+            time.sleep(random.uniform(0.06, 0.14))
+            keyboard.release(attack_key)
         
         # Human jitter between window cycles (based on user config)
         if i < num_cycles - 1:
@@ -792,6 +815,10 @@ def main():
     # Ensure switch_interval_base exists in config
     if 'switch_interval_base' not in config:
         config['switch_interval_base'] = DEFAULT_SWITCH_INTERVAL
+    
+    # Ensure attack_key exists in config
+    if 'attack_key' not in config:
+        config['attack_key'] = None
 
     print(f"\n{t('program_started')}")
     print(t('press_to_start', config['trigger_key']))

@@ -176,6 +176,11 @@ LANGUAGES = {
         # Switch Interval
         'switch_interval_prompt': 'Base interval between Alt+Esc switches (seconds) [Default: 1.5]',
         'switch_interval_updated': 'Switch interval base set to: {}s',
+
+        # Attack Key
+        'attack_key_prompt': 'Attack key to press after switching (press Enter to skip)',
+        'attack_key_updated': 'Attack key set to: [{}]',
+        'pressing_attack_key': '  -> Pressing attack key: [{}]',
     },
     'zh_TW': {
         # Language selection
@@ -352,6 +357,11 @@ LANGUAGES = {
         # Switch Interval
         'switch_interval_prompt': 'Alt+Esc 切換基礎間隔秒數 [預設: 1.5]',
         'switch_interval_updated': '切換間隔基礎值已設為: {}秒',
+
+        # Attack Key
+        'attack_key_prompt': '切換視窗後的攻擊按鍵（直接按 Enter 跳過）',
+        'attack_key_updated': '攻擊按鍵已設為：[{}]',
+        'pressing_attack_key': '  -> 正在按下攻擊按鍵：[{}]',
     }
 }
 
