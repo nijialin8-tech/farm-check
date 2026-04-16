@@ -172,6 +172,10 @@ LANGUAGES = {
         # Mouse Speed
         'mouse_speed_prompt': 'Mouse moving speed (1: Slow, 2: Normal, 3: Fast, 4: Instant) [Default: 2]',
         'mouse_speed_updated': 'Mouse speed set to: {}',
+
+        # Switch Interval
+        'switch_interval_prompt': 'Base interval between Alt+Esc switches (seconds) [Default: 1.5]',
+        'switch_interval_updated': 'Switch interval base set to: {}s',
     },
     'zh_TW': {
         # Language selection
@@ -344,6 +348,10 @@ LANGUAGES = {
         # Mouse Speed
         'mouse_speed_prompt': '滑鼠移動速度 (1: 慢, 2: 正常, 3: 快, 4: 極快) [預設: 2]',
         'mouse_speed_updated': '滑鼠移動速度已設為: {}',
+
+        # Switch Interval
+        'switch_interval_prompt': 'Alt+Esc 切換基礎間隔秒數 [預設: 1.5]',
+        'switch_interval_updated': '切換間隔基礎值已設為: {}秒',
     }
 }
 

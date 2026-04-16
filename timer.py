@@ -268,6 +268,16 @@ def setup_config():
     auto_switch_input = input().strip().lower()
     auto_switch = (auto_switch_input == '/enable')
 
+    # Ask about switch interval
+    print(f"\n{t('switch_interval_prompt')}: ", end='', flush=True)
+    switch_interval_input = input().strip()
+    try:
+        switch_interval = float(switch_interval_input) if switch_interval_input else DEFAULT_SWITCH_INTERVAL
+        if switch_interval < 0.1:
+            switch_interval = 0.1
+    except ValueError:
+        switch_interval = DEFAULT_SWITCH_INTERVAL
+
     return {
         'trigger_key': trigger_key_name,
         'stop_key': stop_key_name,
@@ -276,6 +286,7 @@ def setup_config():
         'auto_click_windows': auto_click,
         'auto_switch_windows': auto_switch,
         'selected_window_hwnds': selected_windows,
+        'switch_interval_base': switch_interval,
         'language': i18n.get_current_language()
     }
 
@@ -297,6 +308,8 @@ def switch_maple_windows():
     if num_cycles == 0:
         return
 
+    base_interval = config.get('switch_interval_base', DEFAULT_SWITCH_INTERVAL)
+
     print(t('starting_switch_sequence', num_cycles))
 
     for i in range(num_cycles):
@@ -316,10 +329,11 @@ def switch_maple_windows():
         # Alt UP
         keyboard.release('alt')
         
-        # Human jitter between window cycles (highly variable)
+        # Human jitter between window cycles (based on user config)
         if i < num_cycles - 1:
-            # Random delay between 0.8s and 2.5s with non-uniform distribution
-            time.sleep(random.uniform(0.8, 1.8) + random.random() * 0.7)
+            # Apply ±50% jitter to the base interval
+            jitter_delay = base_interval * random.uniform(0.5, 1.5)
+            time.sleep(jitter_delay)
             
     print(t('switch_sequence_completed'))
 
@@ -774,6 +788,10 @@ def main():
         if 'selected_window_titles' in config:
             del config['selected_window_titles']
         config['selected_window_hwnds'] = None
+    
+    # Ensure switch_interval_base exists in config
+    if 'switch_interval_base' not in config:
+        config['switch_interval_base'] = DEFAULT_SWITCH_INTERVAL
 
     print(f"\n{t('program_started')}")
     print(t('press_to_start', config['trigger_key']))
