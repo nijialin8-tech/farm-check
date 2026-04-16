@@ -187,6 +187,13 @@ LANGUAGES = {
         'wait_for_trigger_enable': "  Type '/enable' to wait, or press Enter for auto-restart",
         'config_wait_for_trigger': '  Manual trigger after cycle: {}',
         'waiting_for_next_trigger': 'Cycle completed. Waiting for manual key press to restart timer.',
+
+        # Beautiful Logs
+        'log_window_header': '[Window {}/{}] --------------------------',
+        'log_alt_esc': '  -> Alt + Esc: Press ({:.0f}ms) | Release ({:.0f}ms)',
+        'log_focus_delay': '  -> Reaction delay: {:.0f}ms',
+        'log_attack': '  -> Attack action: [{}] ({:.0f}ms)',
+        'log_next_delay': '  -> Next switch delay: {:.2f}s',
     },
     'zh_TW': {
         # Language selection
@@ -374,6 +381,13 @@ LANGUAGES = {
         'wait_for_trigger_enable': "  輸入 '/enable' 啟用手動等待，或按 Enter 自動重啟",
         'config_wait_for_trigger': '  完成後手動觸發: {}',
         'waiting_for_next_trigger': '輪詢結束。請手動按下按鍵重新啟動計時器。',
+
+        # Beautiful Logs
+        'log_window_header': '[視窗 {}/{}] --------------------------',
+        'log_alt_esc': '  -> Alt + Esc: 按下 ({:.0f}ms) | 放開 ({:.0f}ms)',
+        'log_focus_delay': '  -> 擬人反應等待: {:.0f}ms',
+        'log_attack': '  -> 執行攻擊行動: [{}] ({:.0f}ms)',
+        'log_next_delay': '  -> 下次同步延遲: {:.2f}秒',
     }
 }
 

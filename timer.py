@@ -335,39 +335,53 @@ def switch_maple_windows():
     print(t('starting_switch_sequence', num_cycles))
 
     for i in range(num_cycles):
+        print(f"\n{t('log_window_header', i + 1, num_cycles)}")
+        
+        # Timing measurements for logs (human-friendly ms)
+        p_d1 = random.uniform(0.04, 0.08)
+        p_d2 = random.uniform(0.05, 0.12)
+        r_d1 = random.uniform(0.03, 0.07)
+        r_d2 = random.uniform(0.04, 0.09)
+        
         # Human-like Alt+Esc simulation: separate press/release cycles
         # Alt DOWN
         keyboard.press('alt')
-        time.sleep(random.uniform(0.04, 0.08))
+        time.sleep(p_d1)
         
         # Esc DOWN
         keyboard.press('esc')
-        time.sleep(random.uniform(0.05, 0.12))
+        time.sleep(p_d2)
         
         # Esc UP
         keyboard.release('esc')
-        time.sleep(random.uniform(0.03, 0.07))
+        time.sleep(r_d1)
         
         # Alt UP
         keyboard.release('alt')
         
+        print(t('log_alt_esc', p_d2 * 1000, r_d1 * 1000))
+        
         # Small delay after switch to "focus" before attack
-        time.sleep(random.uniform(0.15, 0.35))
+        focus_delay = random.uniform(0.15, 0.35)
+        print(t('log_focus_delay', focus_delay * 1000))
+        time.sleep(focus_delay)
         
         # Optional attack key
         if attack_key:
-            print(t('pressing_attack_key', attack_key))
+            attack_press = random.uniform(0.06, 0.14)
+            print(t('log_attack', attack_key, attack_press * 1000))
             keyboard.press(attack_key)
-            time.sleep(random.uniform(0.06, 0.14))
+            time.sleep(attack_press)
             keyboard.release(attack_key)
         
         # Human jitter between window cycles (based on user config)
         if i < num_cycles - 1:
             # Apply ±50% jitter to the base interval
             jitter_delay = base_interval * random.uniform(0.5, 1.5)
+            print(t('log_next_delay', jitter_delay))
             time.sleep(jitter_delay)
             
-    print(t('switch_sequence_completed'))
+    print(f"\n{t('switch_sequence_completed')}")
 
 def click_maple_windows():
     """
