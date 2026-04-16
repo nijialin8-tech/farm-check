@@ -181,6 +181,12 @@ LANGUAGES = {
         'attack_key_prompt': 'Attack key to press after switching (press Enter to skip)',
         'attack_key_updated': 'Attack key set to: [{}]',
         'pressing_attack_key': '  -> Pressing attack key: [{}]',
+
+        # Manual Trigger Configuration
+        'wait_for_trigger_prompt': 'Wait for manual trigger after completing all window switches?',
+        'wait_for_trigger_enable': "  Type '/enable' to wait, or press Enter for auto-restart",
+        'config_wait_for_trigger': '  Manual trigger after cycle: {}',
+        'waiting_for_next_trigger': 'Cycle completed. Waiting for manual key press to restart timer.',
     },
     'zh_TW': {
         # Language selection
@@ -362,6 +368,12 @@ LANGUAGES = {
         'attack_key_prompt': '切換視窗後的攻擊按鍵（直接按 Enter 跳過）',
         'attack_key_updated': '攻擊按鍵已設為：[{}]',
         'pressing_attack_key': '  -> 正在按下攻擊按鍵：[{}]',
+
+        # Manual Trigger Configuration
+        'wait_for_trigger_prompt': '在完成所有視窗切換後等待手動再次觸發？',
+        'wait_for_trigger_enable': "  輸入 '/enable' 啟用手動等待，或按 Enter 自動重啟",
+        'config_wait_for_trigger': '  完成後手動觸發: {}',
+        'waiting_for_next_trigger': '輪詢結束。請手動按下按鍵重新啟動計時器。',
     }
 }
 

@@ -33,6 +33,8 @@ DEFAULT_COUNTDOWN_SECONDS = 130
 DEFAULT_RANDOM_OFFSET_SECONDS = 0
 DEFAULT_AUTO_CLICK_WINDOWS = False
 DEFAULT_AUTO_SWITCH_WINDOWS = False
+DEFAULT_WAIT_FOR_TRIGGER = False
+DEFAULT_SWITCH_INTERVAL = 1.5
 DEFAULT_MOUSE_SPEED_LEVEL = 2
 CONFIG_FILE = 'timer_config.json'
 # -----------------------
@@ -289,6 +291,12 @@ def setup_config():
     if attack_key:
         print(t('selected', attack_key))
 
+    # Ask about manual trigger after cycle
+    print(f"\n{t('wait_for_trigger_prompt')}")
+    print(f"{t('wait_for_trigger_enable')}: ", end='', flush=True)
+    wait_for_trigger_input = input().strip().lower()
+    wait_for_trigger = (wait_for_trigger_input == '/enable')
+
     return {
         'trigger_key': trigger_key_name,
         'stop_key': stop_key_name,
@@ -299,6 +307,7 @@ def setup_config():
         'selected_window_hwnds': selected_windows,
         'switch_interval_base': switch_interval,
         'attack_key': attack_key,
+        'wait_for_trigger': wait_for_trigger,
         'language': i18n.get_current_language()
     }
 
@@ -542,6 +551,13 @@ def on_timeout():
         print(f"\n{t('auto_click_enabled')}")
         click_maple_windows()
 
+    # Check if we should wait for manual trigger instead of auto-restarting
+    if config.get('wait_for_trigger', False):
+        print(f"\n{t('waiting_for_next_trigger')}")
+        # Stop everything and stay in IDLE until user hits trigger_key manually
+        stop_timer()
+        return
+
     # Auto-restart countdown with ESC to cancel
     print("\n" + "="*50)
     print(t('will_auto_restart'))
@@ -745,6 +761,9 @@ def main():
         auto_switch_status = t('enabled') if existing_config.get('auto_switch_windows', False) else t('disabled')
         print(t('config_auto_switch', auto_switch_status))
 
+        wait_for_trigger_status = t('enabled') if existing_config.get('wait_for_trigger', False) else t('disabled')
+        print(t('config_wait_for_trigger', wait_for_trigger_status))
+
         # Validate HWNDs if auto-click is enabled
         need_reselect = False
         if existing_config.get('auto_click_windows', False):
@@ -812,6 +831,10 @@ def main():
             del config['selected_window_titles']
         config['selected_window_hwnds'] = None
     
+    # Ensure wait_for_trigger exists in config
+    if 'wait_for_trigger' not in config:
+        config['wait_for_trigger'] = DEFAULT_WAIT_FOR_TRIGGER
+
     # Ensure switch_interval_base exists in config
     if 'switch_interval_base' not in config:
         config['switch_interval_base'] = DEFAULT_SWITCH_INTERVAL
