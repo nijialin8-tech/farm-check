@@ -201,6 +201,11 @@ LANGUAGES = {
         'state_normal': 'Normal',
         'state_tired': 'Tired',
         'state_drowsy': 'Drowsy',
+
+        # Anti-Detection
+        'log_anti_detect_pause': '🛡️ Simulating human thought... ({:.1f}s)',
+        'log_long_break': '🛌 Forced human break for physical recovery ({:.1f} mins)',
+        'log_dynamic_shift': '🔄 Pattern shifting: {:+d}s',
     },
     'zh_TW': {
         # Language selection
@@ -402,6 +407,11 @@ LANGUAGES = {
         'state_normal': '一般狀態',
         'state_tired': '有點疲累',
         'state_drowsy': '精神恍惚',
+
+        # Anti-Detection
+        'log_anti_detect_pause': '🛡️ 模擬人類思考中... ({:.1f}秒)',
+        'log_long_break': '🛌 人類體力不支，正在進行中途休息 ({:.1f}分鐘)',
+        'log_dynamic_shift': '🔄 偵測到節奏模式，實施動態相位偏移: {:+d}秒',
     }
 }
 

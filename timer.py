@@ -45,6 +45,8 @@ timer_start_time = None  # Timestamp when timer started
 progress_thread = None  # Thread for displaying progress bar
 stop_progress = False  # Flag to stop progress thread
 config = {}
+cycle_count = 0
+dynamic_base_offset = 0
 
 class HumanStateFactory:
     """Factory to simulate various human physical/mental states."""
@@ -75,6 +77,12 @@ class HumanStateFactory:
         messiness = (random.random() * 0.15) if random.random() > 0.8 else 0
         
         return base_delay * (state_modifier + messiness)
+
+    @classmethod
+    def should_take_long_break(cls):
+        """Randomly decide if a long break (5-12 mins) is needed every ~10-20 cycles."""
+        # 3% chance per cycle (~ once every 2-3 hours @ 3 min cycles)
+        return random.random() < 0.03
 
 def get_config_path():
     """Get the config file path in user's home directory or current directory."""
@@ -365,6 +373,12 @@ def switch_maple_windows():
     # Get a single state for this entire cycle to simulate consistency
     state_key, state_info = HumanStateFactory.get_random_state()
     print(f"\n{t('log_human_state', t('state_' + state_key), state_info['factor'])}")
+    
+    # Simulating a "thinking/hesitation" delay before starting the macro sequence
+    pre_macro_pause = random.uniform(0.5, 2.5) * state_info['factor']
+    print(t('log_anti_detect_pause', pre_macro_pause))
+    time.sleep(pre_macro_pause)
+
     print(t('starting_switch_sequence', num_cycles))
 
     for i in range(num_cycles):
@@ -669,26 +683,41 @@ def on_timeout():
         start_timer()
 
 def start_timer():
-    global current_timer, actual_countdown, timer_start_time, progress_thread, stop_progress
+    global current_timer, actual_countdown, timer_start_time, progress_thread, stop_progress, cycle_count, dynamic_base_offset
     if current_timer is not None:
         current_timer.cancel()
+
+    # Increment cycle count
+    cycle_count += 1
+    
+    # Long Break Simulation (Anti-detection)
+    if cycle_count > 1 and HumanStateFactory.should_take_long_break():
+        break_mins = random.uniform(5.5, 12.5)
+        print(f"\n\n{t('log_long_break', break_mins)}")
+        time.sleep(break_mins * 60)
+        print(f"\n{t('program_resumed')}")
+
+    # Dynamic Base Offset (shifting the macro rhythm every 5 cycles)
+    if cycle_count % 5 == 0:
+        dynamic_base_offset = random.randint(-12, 12)
+        print(f"\n{t('log_dynamic_shift', dynamic_base_offset)}")
 
     # Stop existing progress thread if any
     if progress_thread is not None:
         stop_progress = True
         progress_thread.join(timeout=1.0)
 
-    # Calculate actual countdown with random offset
-    base_time = config['countdown_seconds']
+    # Calculate actual countdown with random offset AND dynamic base offset
+    base_time = config['countdown_seconds'] + dynamic_base_offset
     offset = config.get('random_offset_seconds', 0)
 
     if offset > 0:
         # Random offset between -offset and +offset
         random_offset = random.randint(-offset, offset)
-        actual_countdown = base_time + random_offset
+        actual_countdown = max(10, base_time + random_offset)
         print(f"\n{t('timer_started', actual_countdown, base_time, random_offset)}")
     else:
-        actual_countdown = base_time
+        actual_countdown = max(10, base_time)
         print(f"\n{t('timer_started_simple', actual_countdown)}")
 
     # Start timer and progress bar
