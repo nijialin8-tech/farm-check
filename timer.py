@@ -300,19 +300,26 @@ def switch_maple_windows():
     print(t('starting_switch_sequence', num_cycles))
 
     for i in range(num_cycles):
-        # Human-like Alt+Esc simulation
-        # Use random jitter for key down/up
+        # Human-like Alt+Esc simulation: separate press/release cycles
+        # Alt DOWN
         keyboard.press('alt')
-        time.sleep(random.uniform(0.05, 0.15))
+        time.sleep(random.uniform(0.04, 0.08))
+        
+        # Esc DOWN
         keyboard.press('esc')
-        time.sleep(random.uniform(0.05, 0.15))
+        time.sleep(random.uniform(0.05, 0.12))
+        
+        # Esc UP
         keyboard.release('esc')
-        time.sleep(random.uniform(0.05, 0.15))
+        time.sleep(random.uniform(0.03, 0.07))
+        
+        # Alt UP
         keyboard.release('alt')
         
-        # Jitter between window cycles
+        # Human jitter between window cycles (highly variable)
         if i < num_cycles - 1:
-            time.sleep(random.uniform(0.6, 1.4))
+            # Random delay between 0.8s and 2.5s with non-uniform distribution
+            time.sleep(random.uniform(0.8, 1.8) + random.random() * 0.7)
             
     print(t('switch_sequence_completed'))
 
