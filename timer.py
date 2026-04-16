@@ -32,6 +32,8 @@ DEFAULT_STOP_KEY = 'page down'
 DEFAULT_COUNTDOWN_SECONDS = 130
 DEFAULT_RANDOM_OFFSET_SECONDS = 0
 DEFAULT_AUTO_CLICK_WINDOWS = False
+DEFAULT_AUTO_SWITCH_WINDOWS = False
+DEFAULT_MOUSE_SPEED_LEVEL = 2
 CONFIG_FILE = 'timer_config.json'
 # -----------------------
 
@@ -260,15 +262,59 @@ def setup_config():
     else:
         print(f"\n{t('auto_click_unavailable')}")
 
+    # Ask about auto-switch (Alt+Esc)
+    print(f"\n{t('auto_switch_prompt')}")
+    print(f"{t('auto_switch_enable')}: ", end='', flush=True)
+    auto_switch_input = input().strip().lower()
+    auto_switch = (auto_switch_input == '/enable')
+
     return {
         'trigger_key': trigger_key_name,
         'stop_key': stop_key_name,
         'countdown_seconds': countdown_seconds,
         'random_offset_seconds': random_offset,
         'auto_click_windows': auto_click,
+        'auto_switch_windows': auto_switch,
         'selected_window_hwnds': selected_windows,
         'language': i18n.get_current_language()
     }
+
+def switch_maple_windows():
+    """Cycle through MapleRoyals windows using Alt+Esc with random jitter."""
+    windows = window_utils.get_maple_windows()
+    if not windows:
+        print(t('no_windows_found'))
+        return
+
+    # Filter by selected HWNDs if applicable
+    selected_hwnds = config.get('selected_window_hwnds')
+    if selected_hwnds:
+        valid_hwnds = [h for h, _, _ in windows if h in selected_hwnds]
+    else:
+        valid_hwnds = [h for h, _, _ in windows]
+
+    num_cycles = len(valid_hwnds)
+    if num_cycles == 0:
+        return
+
+    print(t('starting_switch_sequence', num_cycles))
+
+    for i in range(num_cycles):
+        # Human-like Alt+Esc simulation
+        # Use random jitter for key down/up
+        keyboard.press('alt')
+        time.sleep(random.uniform(0.05, 0.15))
+        keyboard.press('esc')
+        time.sleep(random.uniform(0.05, 0.15))
+        keyboard.release('esc')
+        time.sleep(random.uniform(0.05, 0.15))
+        keyboard.release('alt')
+        
+        # Jitter between window cycles
+        if i < num_cycles - 1:
+            time.sleep(random.uniform(0.6, 1.4))
+            
+    print(t('switch_sequence_completed'))
 
 def click_maple_windows():
     """
@@ -442,6 +488,10 @@ def play_sound():
 def on_timeout():
     global config
     play_sound()
+
+    # Execute Alt+Esc sequence if enabled
+    if config.get('auto_switch_windows', False):
+        switch_maple_windows()
 
     # Execute auto-click if enabled
     if config.get('auto_click_windows', False):
@@ -648,6 +698,9 @@ def main():
         auto_click_status = t('enabled') if existing_config.get('auto_click_windows', False) else t('disabled')
         print(t('config_auto_click', auto_click_status))
 
+        auto_switch_status = t('enabled') if existing_config.get('auto_switch_windows', False) else t('disabled')
+        print(t('config_auto_switch', auto_switch_status))
+
         # Validate HWNDs if auto-click is enabled
         need_reselect = False
         if existing_config.get('auto_click_windows', False):
@@ -729,6 +782,11 @@ def main():
             print(t('mode_all_windows'))
     else:
         print(t('auto_click_status', t('disabled')))
+
+    if config.get('auto_switch_windows', False):
+        print(t('auto_switch_status', t('enabled')))
+    else:
+        print(t('auto_switch_status', t('disabled')))
         
     print(f"{t('type_setup')}\n")
 

@@ -161,6 +161,14 @@ LANGUAGES = {
         'load_config_error': 'Failed to load config: {}',
         'invalid_warning': 'Warning: Invalid index {}, skipping',
 
+        # Auto Switch (Alt+Esc)
+        'auto_switch_prompt': 'Auto window-switch (Alt+Esc) when timer ends?',
+        'auto_switch_enable': "  Type '/enable' to restore, or press Enter to skip",
+        'starting_switch_sequence': 'Starting Alt+Esc sequence for {} window(s)...',
+        'switch_sequence_completed': 'Alt+Esc sequence completed.',
+        'config_auto_switch': '  Auto window-switch: {}',
+        'auto_switch_status': 'Auto window-switch: {}',
+
         # Mouse Speed
         'mouse_speed_prompt': 'Mouse moving speed (1: Slow, 2: Normal, 3: Fast, 4: Instant) [Default: 2]',
         'mouse_speed_updated': 'Mouse speed set to: {}',
@@ -324,6 +332,14 @@ LANGUAGES = {
         'warning_automation': '警告：pygetwindow 或 pyautogui 未安裝。視窗自動化已停用。',
         'load_config_error': '載入設定失敗：{}',
         'invalid_warning': '警告：無效的索引 {}，跳過',
+
+        # Auto Switch (Alt+Esc)
+        'auto_switch_prompt': '計時結束時自動切換視窗 (Alt+Esc)？',
+        'auto_switch_enable': "  輸入 '/enable' 恢復，或按 Enter 跳過",
+        'starting_switch_sequence': '開始執行 {} 個視窗的 Alt+Esc 切換序列...',
+        'switch_sequence_completed': 'Alt+Esc 切換序列執行完畢。',
+        'config_auto_switch': '  自動視窗切換 (Alt+Esc)：{}',
+        'auto_switch_status': '自動視窗切換：{}',
 
         # Mouse Speed
         'mouse_speed_prompt': '滑鼠移動速度 (1: 慢, 2: 正常, 3: 快, 4: 極快) [預設: 2]',
