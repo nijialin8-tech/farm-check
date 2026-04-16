@@ -32,6 +32,10 @@ DEFAULT_STOP_KEY = 'page down'
 DEFAULT_COUNTDOWN_SECONDS = 130
 DEFAULT_RANDOM_OFFSET_SECONDS = 0
 DEFAULT_AUTO_CLICK_WINDOWS = False
+DEFAULT_AUTO_SWITCH_WINDOWS = False
+DEFAULT_WAIT_FOR_TRIGGER = False
+DEFAULT_SWITCH_INTERVAL = 1.5
+DEFAULT_MOUSE_SPEED_LEVEL = 2
 CONFIG_FILE = 'timer_config.json'
 # -----------------------
 
@@ -41,6 +45,44 @@ timer_start_time = None  # Timestamp when timer started
 progress_thread = None  # Thread for displaying progress bar
 stop_progress = False  # Flag to stop progress thread
 config = {}
+cycle_count = 0
+dynamic_base_offset = 0
+
+class HumanStateFactory:
+    """Factory to simulate various human physical/mental states."""
+    
+    STATES = {
+        'focused': {'factor': 0.7, 'jitter': 0.1, 'weight': 15},
+        'normal':  {'factor': 1.0, 'jitter': 0.2, 'weight': 50},
+        'tired':   {'factor': 1.6, 'jitter': 0.4, 'weight': 25},
+        'drowsy':  {'factor': 3.5, 'jitter': 1.2, 'weight': 10}
+    }
+
+    @classmethod
+    def get_random_state(cls):
+        state_names = list(cls.STATES.keys())
+        weights = [cls.STATES[s]['weight'] for s in state_names]
+        state_key = random.choices(state_names, weights=weights, k=1)[0]
+        return state_key, cls.STATES[state_key]
+
+    @classmethod
+    def apply_fatigue(cls, base_delay, state_info):
+        """Apply fatigue factor and high-entropy jitter to a base delay."""
+        factor = state_info['factor']
+        jitter_range = state_info['jitter']
+        
+        # Calculate a personalized delay based on the state
+        # Uses multiple random distributions for more human-like 'messiness'
+        state_modifier = factor + random.uniform(-jitter_range, jitter_range)
+        messiness = (random.random() * 0.15) if random.random() > 0.8 else 0
+        
+        return base_delay * (state_modifier + messiness)
+
+    @classmethod
+    def should_take_long_break(cls):
+        """Randomly decide if a long break (5-12 mins) is needed every ~10-20 cycles."""
+        # 3% chance per cycle (~ once every 2-3 hours @ 3 min cycles)
+        return random.random() < 0.03
 
 def get_config_path():
     """Get the config file path in user's home directory or current directory."""
@@ -260,15 +302,133 @@ def setup_config():
     else:
         print(f"\n{t('auto_click_unavailable')}")
 
+    # Ask about auto-switch (Alt+Esc)
+    print(f"\n{t('auto_switch_prompt')}")
+    print(f"{t('auto_switch_enable')}: ", end='', flush=True)
+    auto_switch_input = input().strip().lower()
+    auto_switch = (auto_switch_input == '/enable')
+
+    # Ask about switch interval
+    print(f"\n{t('switch_interval_prompt')}: ", end='', flush=True)
+    switch_interval_input = input().strip()
+    try:
+        switch_interval = float(switch_interval_input) if switch_interval_input else DEFAULT_SWITCH_INTERVAL
+        if switch_interval < 0.1:
+            switch_interval = 0.1
+    except ValueError:
+        switch_interval = DEFAULT_SWITCH_INTERVAL
+
+    # Ask about attack key
+    print(f"\n{t('attack_key_prompt')}: ", end='', flush=True)
+    attack_key_event = keyboard.read_event(suppress=True)
+    while attack_key_event.event_type != 'down':
+        attack_key_event = keyboard.read_event(suppress=True)
+    
+    # Use Enter (name='enter') as skipped indicator
+    attack_key = None if attack_key_event.name == 'enter' else attack_key_event.name
+    if attack_key:
+        print(t('selected', attack_key))
+
+    # Ask about manual trigger after cycle
+    print(f"\n{t('wait_for_trigger_prompt')}")
+    print(f"{t('wait_for_trigger_enable')}: ", end='', flush=True)
+    wait_for_trigger_input = input().strip().lower()
+    wait_for_trigger = (wait_for_trigger_input == '/enable')
+
     return {
         'trigger_key': trigger_key_name,
         'stop_key': stop_key_name,
         'countdown_seconds': countdown_seconds,
         'random_offset_seconds': random_offset,
         'auto_click_windows': auto_click,
+        'auto_switch_windows': auto_switch,
         'selected_window_hwnds': selected_windows,
+        'switch_interval_base': switch_interval,
+        'attack_key': attack_key,
+        'wait_for_trigger': wait_for_trigger,
         'language': i18n.get_current_language()
     }
+
+def switch_maple_windows():
+    """Cycle through MapleRoyals windows using Alt+Esc with random jitter and human fatigue simulation."""
+    windows = window_utils.get_maple_windows()
+    if not windows:
+        print(t('no_windows_found'))
+        return
+
+    # Filter by selected HWNDs if applicable
+    selected_hwnds = config.get('selected_window_hwnds')
+    if selected_hwnds:
+        valid_hwnds = [h for h, _, _ in windows if h in selected_hwnds]
+    else:
+        valid_hwnds = [h for h, _, _ in windows]
+
+    num_cycles = len(valid_hwnds)
+    if num_cycles == 0:
+        return
+
+    base_interval = config.get('switch_interval_base', DEFAULT_SWITCH_INTERVAL)
+    attack_key = config.get('attack_key')
+
+    # Get a single state for this entire cycle to simulate consistency
+    state_key, state_info = HumanStateFactory.get_random_state()
+    print(f"\n{t('log_human_state', t('state_' + state_key), state_info['factor'])}")
+    
+    # Simulating a "thinking/hesitation" delay before starting the macro sequence
+    pre_macro_pause = random.uniform(0.5, 2.5) * state_info['factor']
+    print(t('log_anti_detect_pause', pre_macro_pause))
+    time.sleep(pre_macro_pause)
+
+    print(t('starting_switch_sequence', num_cycles))
+
+    for i in range(num_cycles):
+        print(f"\n{t('log_window_header', i + 1, num_cycles)}")
+        
+        # All atomic delays are influenced by the current human state
+        p_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.04, 0.08), state_info)
+        p_d2 = HumanStateFactory.apply_fatigue(random.uniform(0.05, 0.12), state_info)
+        r_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.03, 0.07), state_info)
+        r_d2 = HumanStateFactory.apply_fatigue(random.uniform(0.04, 0.09), state_info)
+        
+        # Alt DOWN
+        keyboard.press('alt')
+        time.sleep(p_d1)
+        
+        # Esc DOWN
+        keyboard.press('esc')
+        time.sleep(p_d2)
+        
+        # Esc UP
+        keyboard.release('esc')
+        time.sleep(r_d1)
+        
+        # Alt UP
+        keyboard.release('alt')
+        
+        print(t('log_alt_esc', p_d2 * 1000, r_d1 * 1000))
+        
+        # Delay after switch to "focus" before attack, influenced by fatigue
+        focus_delay = HumanStateFactory.apply_fatigue(random.uniform(0.18, 0.40), state_info)
+        print(t('log_focus_delay', focus_delay * 1000))
+        time.sleep(focus_delay)
+        
+        # Optional attack key
+        if attack_key:
+            attack_press = HumanStateFactory.apply_fatigue(random.uniform(0.06, 0.14), state_info)
+            print(t('log_attack', attack_key, attack_press * 1000))
+            keyboard.press(attack_key)
+            time.sleep(attack_press)
+            keyboard.release(attack_key)
+        
+        # Human jitter between window cycles
+        if i < num_cycles - 1:
+            # The base interval is already randomized, but we also apply fatigue factor
+            state_jitter = state_info['factor'] * random.uniform(0.7, 1.3)
+            jitter_delay = base_interval * state_jitter
+            print(t('log_next_delay', jitter_delay))
+            time.sleep(jitter_delay)
+            
+    print(f"\n{t('switch_sequence_completed')}")
 
 def click_maple_windows():
     """
@@ -443,10 +603,21 @@ def on_timeout():
     global config
     play_sound()
 
+    # Execute Alt+Esc sequence if enabled
+    if config.get('auto_switch_windows', False):
+        switch_maple_windows()
+
     # Execute auto-click if enabled
     if config.get('auto_click_windows', False):
         print(f"\n{t('auto_click_enabled')}")
         click_maple_windows()
+
+    # Check if we should wait for manual trigger instead of auto-restarting
+    if config.get('wait_for_trigger', False):
+        print(f"\n{t('waiting_for_next_trigger')}")
+        # Stop everything and stay in IDLE until user hits trigger_key manually
+        stop_timer()
+        return
 
     # Auto-restart countdown with ESC to cancel
     print("\n" + "="*50)
@@ -512,26 +683,41 @@ def on_timeout():
         start_timer()
 
 def start_timer():
-    global current_timer, actual_countdown, timer_start_time, progress_thread, stop_progress
+    global current_timer, actual_countdown, timer_start_time, progress_thread, stop_progress, cycle_count, dynamic_base_offset
     if current_timer is not None:
         current_timer.cancel()
+
+    # Increment cycle count
+    cycle_count += 1
+    
+    # Long Break Simulation (Anti-detection)
+    if cycle_count > 1 and HumanStateFactory.should_take_long_break():
+        break_mins = random.uniform(5.5, 12.5)
+        print(f"\n\n{t('log_long_break', break_mins)}")
+        time.sleep(break_mins * 60)
+        print(f"\n{t('program_resumed')}")
+
+    # Dynamic Base Offset (shifting the macro rhythm every 5 cycles)
+    if cycle_count % 5 == 0:
+        dynamic_base_offset = random.randint(-12, 12)
+        print(f"\n{t('log_dynamic_shift', dynamic_base_offset)}")
 
     # Stop existing progress thread if any
     if progress_thread is not None:
         stop_progress = True
         progress_thread.join(timeout=1.0)
 
-    # Calculate actual countdown with random offset
-    base_time = config['countdown_seconds']
+    # Calculate actual countdown with random offset AND dynamic base offset
+    base_time = config['countdown_seconds'] + dynamic_base_offset
     offset = config.get('random_offset_seconds', 0)
 
     if offset > 0:
         # Random offset between -offset and +offset
         random_offset = random.randint(-offset, offset)
-        actual_countdown = base_time + random_offset
+        actual_countdown = max(10, base_time + random_offset)
         print(f"\n{t('timer_started', actual_countdown, base_time, random_offset)}")
     else:
-        actual_countdown = base_time
+        actual_countdown = max(10, base_time)
         print(f"\n{t('timer_started_simple', actual_countdown)}")
 
     # Start timer and progress bar
@@ -648,6 +834,12 @@ def main():
         auto_click_status = t('enabled') if existing_config.get('auto_click_windows', False) else t('disabled')
         print(t('config_auto_click', auto_click_status))
 
+        auto_switch_status = t('enabled') if existing_config.get('auto_switch_windows', False) else t('disabled')
+        print(t('config_auto_switch', auto_switch_status))
+
+        wait_for_trigger_status = t('enabled') if existing_config.get('wait_for_trigger', False) else t('disabled')
+        print(t('config_wait_for_trigger', wait_for_trigger_status))
+
         # Validate HWNDs if auto-click is enabled
         need_reselect = False
         if existing_config.get('auto_click_windows', False):
@@ -714,6 +906,18 @@ def main():
         if 'selected_window_titles' in config:
             del config['selected_window_titles']
         config['selected_window_hwnds'] = None
+    
+    # Ensure wait_for_trigger exists in config
+    if 'wait_for_trigger' not in config:
+        config['wait_for_trigger'] = DEFAULT_WAIT_FOR_TRIGGER
+
+    # Ensure switch_interval_base exists in config
+    if 'switch_interval_base' not in config:
+        config['switch_interval_base'] = DEFAULT_SWITCH_INTERVAL
+    
+    # Ensure attack_key exists in config
+    if 'attack_key' not in config:
+        config['attack_key'] = None
 
     print(f"\n{t('program_started')}")
     print(t('press_to_start', config['trigger_key']))
@@ -729,6 +933,11 @@ def main():
             print(t('mode_all_windows'))
     else:
         print(t('auto_click_status', t('disabled')))
+
+    if config.get('auto_switch_windows', False):
+        print(t('auto_switch_status', t('enabled')))
+    else:
+        print(t('auto_switch_status', t('disabled')))
         
     print(f"{t('type_setup')}\n")
 

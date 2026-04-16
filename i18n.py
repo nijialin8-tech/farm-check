@@ -161,9 +161,51 @@ LANGUAGES = {
         'load_config_error': 'Failed to load config: {}',
         'invalid_warning': 'Warning: Invalid index {}, skipping',
 
+        # Auto Switch (Alt+Esc)
+        'auto_switch_prompt': 'Auto window-switch (Alt+Esc) when timer ends?',
+        'auto_switch_enable': "  Type '/enable' to restore, or press Enter to skip",
+        'starting_switch_sequence': 'Starting Alt+Esc sequence for {} window(s)...',
+        'switch_sequence_completed': 'Alt+Esc sequence completed.',
+        'config_auto_switch': '  Auto window-switch: {}',
+        'auto_switch_status': 'Auto window-switch: {}',
+
         # Mouse Speed
         'mouse_speed_prompt': 'Mouse moving speed (1: Slow, 2: Normal, 3: Fast, 4: Instant) [Default: 2]',
         'mouse_speed_updated': 'Mouse speed set to: {}',
+
+        # Switch Interval
+        'switch_interval_prompt': 'Base interval between Alt+Esc switches (seconds) [Default: 1.5]',
+        'switch_interval_updated': 'Switch interval base set to: {}s',
+
+        # Attack Key
+        'attack_key_prompt': 'Attack key to press after switching (press Enter to skip)',
+        'attack_key_updated': 'Attack key set to: [{}]',
+        'pressing_attack_key': '  -> Pressing attack key: [{}]',
+
+        # Manual Trigger Configuration
+        'wait_for_trigger_prompt': 'Wait for manual trigger after completing all window switches?',
+        'wait_for_trigger_enable': "  Type '/enable' to wait, or press Enter for auto-restart",
+        'config_wait_for_trigger': '  Manual trigger after cycle: {}',
+        'waiting_for_next_trigger': 'Cycle completed. Waiting for manual key press to restart timer.',
+
+        # Beautiful Logs
+        'log_window_header': '[Window {}/{}] --------------------------',
+        'log_alt_esc': '  -> Alt + Esc: Press ({:.0f}ms) | Release ({:.0f}ms)',
+        'log_focus_delay': '  -> Reaction delay: {:.0f}ms',
+        'log_attack': '  -> Attack action: [{}] ({:.0f}ms)',
+        'log_next_delay': '  -> Next switch delay: {:.2f}s',
+
+        # Fatigue Simulator
+        'log_human_state': '✨ Human State: {} (Fatigue factor: x{:.2f})',
+        'state_focused': 'Focused',
+        'state_normal': 'Normal',
+        'state_tired': 'Tired',
+        'state_drowsy': 'Drowsy',
+
+        # Anti-Detection
+        'log_anti_detect_pause': '🛡️ Simulating human thought... ({:.1f}s)',
+        'log_long_break': '🛌 Forced human break for physical recovery ({:.1f} mins)',
+        'log_dynamic_shift': '🔄 Pattern shifting: {:+d}s',
     },
     'zh_TW': {
         # Language selection
@@ -325,9 +367,51 @@ LANGUAGES = {
         'load_config_error': '載入設定失敗：{}',
         'invalid_warning': '警告：無效的索引 {}，跳過',
 
+        # Auto Switch (Alt+Esc)
+        'auto_switch_prompt': '計時結束時自動切換視窗 (Alt+Esc)？',
+        'auto_switch_enable': "  輸入 '/enable' 恢復，或按 Enter 跳過",
+        'starting_switch_sequence': '開始執行 {} 個視窗的 Alt+Esc 切換序列...',
+        'switch_sequence_completed': 'Alt+Esc 切換序列執行完畢。',
+        'config_auto_switch': '  自動視窗切換 (Alt+Esc)：{}',
+        'auto_switch_status': '自動視窗切換：{}',
+
         # Mouse Speed
         'mouse_speed_prompt': '滑鼠移動速度 (1: 慢, 2: 正常, 3: 快, 4: 極快) [預設: 2]',
         'mouse_speed_updated': '滑鼠移動速度已設為: {}',
+
+        # Switch Interval
+        'switch_interval_prompt': 'Alt+Esc 切換基礎間隔秒數 [預設: 1.5]',
+        'switch_interval_updated': '切換間隔基礎值已設為: {}秒',
+
+        # Attack Key
+        'attack_key_prompt': '切換視窗後的攻擊按鍵（直接按 Enter 跳過）',
+        'attack_key_updated': '攻擊按鍵已設為：[{}]',
+        'pressing_attack_key': '  -> 正在按下攻擊按鍵：[{}]',
+
+        # Manual Trigger Configuration
+        'wait_for_trigger_prompt': '在完成所有視窗切換後等待手動再次觸發？',
+        'wait_for_trigger_enable': "  輸入 '/enable' 啟用手動等待，或按 Enter 自動重啟",
+        'config_wait_for_trigger': '  完成後手動觸發: {}',
+        'waiting_for_next_trigger': '輪詢結束。請手動按下按鍵重新啟動計時器。',
+
+        # Beautiful Logs
+        'log_window_header': '[視窗 {}/{}] --------------------------',
+        'log_alt_esc': '  -> Alt + Esc: 按下 ({:.0f}ms) | 放開 ({:.0f}ms)',
+        'log_focus_delay': '  -> 擬人反應等待: {:.0f}ms',
+        'log_attack': '  -> 執行攻擊行動: [{}] ({:.0f}ms)',
+        'log_next_delay': '  -> 下次同步延遲: {:.2f}秒',
+
+        # Fatigue Simulator
+        'log_human_state': '✨ 當前狀態: {} (疲勞係數: x{:.2f})',
+        'state_focused': '非常專注',
+        'state_normal': '一般狀態',
+        'state_tired': '有點疲累',
+        'state_drowsy': '精神恍惚',
+
+        # Anti-Detection
+        'log_anti_detect_pause': '🛡️ 模擬人類思考中... ({:.1f}秒)',
+        'log_long_break': '🛌 人類體力不支，正在進行中途休息 ({:.1f}分鐘)',
+        'log_dynamic_shift': '🔄 偵測到節奏模式，實施動態相位偏移: {:+d}秒',
     }
 }
 
