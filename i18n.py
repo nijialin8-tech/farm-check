@@ -194,6 +194,13 @@ LANGUAGES = {
         'log_focus_delay': '  -> Reaction delay: {:.0f}ms',
         'log_attack': '  -> Attack action: [{}] ({:.0f}ms)',
         'log_next_delay': '  -> Next switch delay: {:.2f}s',
+
+        # Fatigue Simulator
+        'log_human_state': '✨ Human State: {} (Fatigue factor: x{:.2f})',
+        'state_focused': 'Focused',
+        'state_normal': 'Normal',
+        'state_tired': 'Tired',
+        'state_drowsy': 'Drowsy',
     },
     'zh_TW': {
         # Language selection
@@ -388,6 +395,13 @@ LANGUAGES = {
         'log_focus_delay': '  -> 擬人反應等待: {:.0f}ms',
         'log_attack': '  -> 執行攻擊行動: [{}] ({:.0f}ms)',
         'log_next_delay': '  -> 下次同步延遲: {:.2f}秒',
+
+        # Fatigue Simulator
+        'log_human_state': '✨ 當前狀態: {} (疲勞係數: x{:.2f})',
+        'state_focused': '非常專注',
+        'state_normal': '一般狀態',
+        'state_tired': '有點疲累',
+        'state_drowsy': '精神恍惚',
     }
 }
 

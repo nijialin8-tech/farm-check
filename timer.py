@@ -46,6 +46,36 @@ progress_thread = None  # Thread for displaying progress bar
 stop_progress = False  # Flag to stop progress thread
 config = {}
 
+class HumanStateFactory:
+    """Factory to simulate various human physical/mental states."""
+    
+    STATES = {
+        'focused': {'factor': 0.7, 'jitter': 0.1, 'weight': 15},
+        'normal':  {'factor': 1.0, 'jitter': 0.2, 'weight': 50},
+        'tired':   {'factor': 1.6, 'jitter': 0.4, 'weight': 25},
+        'drowsy':  {'factor': 3.5, 'jitter': 1.2, 'weight': 10}
+    }
+
+    @classmethod
+    def get_random_state(cls):
+        state_names = list(cls.STATES.keys())
+        weights = [cls.STATES[s]['weight'] for s in state_names]
+        state_key = random.choices(state_names, weights=weights, k=1)[0]
+        return state_key, cls.STATES[state_key]
+
+    @classmethod
+    def apply_fatigue(cls, base_delay, state_info):
+        """Apply fatigue factor and high-entropy jitter to a base delay."""
+        factor = state_info['factor']
+        jitter_range = state_info['jitter']
+        
+        # Calculate a personalized delay based on the state
+        # Uses multiple random distributions for more human-like 'messiness'
+        state_modifier = factor + random.uniform(-jitter_range, jitter_range)
+        messiness = (random.random() * 0.15) if random.random() > 0.8 else 0
+        
+        return base_delay * (state_modifier + messiness)
+
 def get_config_path():
     """Get the config file path in user's home directory or current directory."""
     if getattr(sys, 'frozen', False):
@@ -312,7 +342,7 @@ def setup_config():
     }
 
 def switch_maple_windows():
-    """Cycle through MapleRoyals windows using Alt+Esc with random jitter."""
+    """Cycle through MapleRoyals windows using Alt+Esc with random jitter and human fatigue simulation."""
     windows = window_utils.get_maple_windows()
     if not windows:
         print(t('no_windows_found'))
@@ -332,18 +362,20 @@ def switch_maple_windows():
     base_interval = config.get('switch_interval_base', DEFAULT_SWITCH_INTERVAL)
     attack_key = config.get('attack_key')
 
+    # Get a single state for this entire cycle to simulate consistency
+    state_key, state_info = HumanStateFactory.get_random_state()
+    print(f"\n{t('log_human_state', t('state_' + state_key), state_info['factor'])}")
     print(t('starting_switch_sequence', num_cycles))
 
     for i in range(num_cycles):
         print(f"\n{t('log_window_header', i + 1, num_cycles)}")
         
-        # Timing measurements for logs (human-friendly ms)
-        p_d1 = random.uniform(0.04, 0.08)
-        p_d2 = random.uniform(0.05, 0.12)
-        r_d1 = random.uniform(0.03, 0.07)
-        r_d2 = random.uniform(0.04, 0.09)
+        # All atomic delays are influenced by the current human state
+        p_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.04, 0.08), state_info)
+        p_d2 = HumanStateFactory.apply_fatigue(random.uniform(0.05, 0.12), state_info)
+        r_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.03, 0.07), state_info)
+        r_d2 = HumanStateFactory.apply_fatigue(random.uniform(0.04, 0.09), state_info)
         
-        # Human-like Alt+Esc simulation: separate press/release cycles
         # Alt DOWN
         keyboard.press('alt')
         time.sleep(p_d1)
@@ -361,23 +393,24 @@ def switch_maple_windows():
         
         print(t('log_alt_esc', p_d2 * 1000, r_d1 * 1000))
         
-        # Small delay after switch to "focus" before attack
-        focus_delay = random.uniform(0.15, 0.35)
+        # Delay after switch to "focus" before attack, influenced by fatigue
+        focus_delay = HumanStateFactory.apply_fatigue(random.uniform(0.18, 0.40), state_info)
         print(t('log_focus_delay', focus_delay * 1000))
         time.sleep(focus_delay)
         
         # Optional attack key
         if attack_key:
-            attack_press = random.uniform(0.06, 0.14)
+            attack_press = HumanStateFactory.apply_fatigue(random.uniform(0.06, 0.14), state_info)
             print(t('log_attack', attack_key, attack_press * 1000))
             keyboard.press(attack_key)
             time.sleep(attack_press)
             keyboard.release(attack_key)
         
-        # Human jitter between window cycles (based on user config)
+        # Human jitter between window cycles
         if i < num_cycles - 1:
-            # Apply ±50% jitter to the base interval
-            jitter_delay = base_interval * random.uniform(0.5, 1.5)
+            # The base interval is already randomized, but we also apply fatigue factor
+            state_jitter = state_info['factor'] * random.uniform(0.7, 1.3)
+            jitter_delay = base_interval * state_jitter
             print(t('log_next_delay', jitter_delay))
             time.sleep(jitter_delay)
             
