@@ -217,6 +217,10 @@ LANGUAGES = {
         'tray_status_running': 'Running (Left: {})',
         'tray_status_idle': 'Idle',
         'console_hidden': 'Console hidden. You can open it from the system tray.',
+
+        # Easter Eggs
+        'easter_egg_coffee': '☕ Maru is grinding virtual beans for you... (Focused state chance increased!)',
+        'ota_success_banner': '🎊 OTA Update successful! Applied codename: {}',
     },
     'zh_TW': {
         # Language selection
@@ -434,6 +438,10 @@ LANGUAGES = {
         'tray_status_running': '計時中 (剩餘: {})',
         'tray_status_idle': '閒置中',
         'console_hidden': '控制台已隱藏。您可以透過右下角系統匣開啟。',
+
+        # Easter Eggs
+        'easter_egg_coffee': '☕ Maru 正在為您研磨擬人化咖啡豆...（進入專注狀態機率提高！）',
+        'ota_success_banner': '🎊 OTA 線上更新成功！本次更新代號：{}',
     }
 }
 

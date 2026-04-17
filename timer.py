@@ -859,6 +859,16 @@ def command_listener():
                 print(t('countdown_display', config['countdown_seconds']))
                 print(f"{t('type_setup')}\n")
 
+            elif cmd == '/coffee':
+                print(f"\n{t('easter_egg_coffee')}")
+                # Secretly boost energized/focused weight
+                HumanStateFactory.STATES['energized']['weight'] = 40
+                HumanStateFactory.STATES['focused']['weight'] = 40
+                HumanStateFactory.STATES['normal']['weight'] = 10
+                HumanStateFactory.STATES['tired']['weight'] = 5
+                HumanStateFactory.STATES['drowsy']['weight'] = 5
+                print("✨ [Maru Mode] Current system status is now highly alert!")
+
             elif cmd in ['/language', '/lang']:
                 print("\n" + "="*50)
                 i18n.select_language()
