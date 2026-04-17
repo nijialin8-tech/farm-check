@@ -10,6 +10,15 @@ import i18n
 import ota
 from i18n import t  # Translation function
 
+# System Tray modules
+try:
+    import pystray
+    from pystray import MenuItem as item
+    from PIL import Image, ImageDraw
+    TRAY_AVAILABLE = True
+except ImportError:
+    TRAY_AVAILABLE = False
+
 # Windows-specific module (only available on Windows)
 try:
     import winsound
@@ -25,6 +34,52 @@ try:
 except ImportError:
     WINDOW_AUTOMATION_AVAILABLE = False
     print(t('warning_automation'))
+
+import ctypes
+
+def hide_console():
+    """Hide the console window."""
+    whnd = ctypes.windll.kernel32.GetConsoleWindow()
+    if whnd != 0:
+        ctypes.windll.user32.ShowWindow(whnd, 0)
+
+def show_console():
+    """Show the console window."""
+    whnd = ctypes.windll.kernel32.GetConsoleWindow()
+    if whnd != 0:
+        ctypes.windll.user32.ShowWindow(whnd, 5)
+
+def create_tray_icon(on_exit_callback, restart_callback, stop_callback):
+    """Create a system tray icon."""
+    if not TRAY_AVAILABLE:
+        return None
+
+    # Generate a simple icon (green circle or similar)
+    image = Image.new('RGB', (64, 64), color='black')
+    dc = ImageDraw.Draw(image)
+    dc.ellipse([8, 8, 56, 56], fill='green', outline='white')
+
+    def toggle_console(icon, item):
+        global console_visible
+        if console_visible:
+            hide_console()
+            console_visible = False
+        else:
+            show_console()
+            console_visible = True
+
+    menu = pystray.Menu(
+        item(lambda text: t('tray_show') if not console_visible else t('tray_hide'), toggle_console),
+        item(t('tray_start'), lambda icon, item: restart_callback()),
+        item(t('tray_stop'), lambda icon, item: stop_callback()),
+        item(t('tray_exit'), lambda icon, item: on_exit_callback())
+    )
+
+    icon = pystray.Icon("farm_check", image, "MapleRoyals Timer", menu)
+    return icon
+
+def tray_thread_func(icon):
+    icon.run()
 
 # --- Default settings ---
 DEFAULT_TRIGGER_KEY = 'page up'
@@ -47,6 +102,32 @@ stop_progress = False  # Flag to stop progress thread
 config = {}
 cycle_count = 0
 dynamic_base_offset = 0
+tray_icon = None
+console_visible = True
+# Store last trigger times for independent key schedules
+last_extra_trigger_times = {} 
+# Web shared state
+web_logs = []
+current_human_state_display = "Idle"
+
+def get_local_ip():
+    """Find the local IP address for LAN access display."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
+
+def log_to_web(message):
+    """Add a line to the web-viewable logs."""
+    global web_logs
+    web_logs.append(f"[{time.strftime('%H:%M:%S')}] {message}")
+    # Keep only last 100 lines
+    if len(web_logs) > 100:
+        web_logs.pop(0)
 
 class HumanStateFactory:
     """Factory to simulate various human physical/mental states."""
@@ -369,6 +450,7 @@ def switch_maple_windows():
 
     base_interval = config.get('switch_interval_base', DEFAULT_SWITCH_INTERVAL)
     attack_key = config.get('attack_key')
+    extra_keys_config = config.get('extra_keys', {})
 
     # Get a single state for this entire cycle to simulate consistency
     state_key, state_info = HumanStateFactory.get_random_state()
@@ -381,6 +463,8 @@ def switch_maple_windows():
 
     print(t('starting_switch_sequence', num_cycles))
 
+    current_time = time.time()
+
     for i in range(num_cycles):
         print(f"\n{t('log_window_header', i + 1, num_cycles)}")
         
@@ -388,20 +472,16 @@ def switch_maple_windows():
         p_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.04, 0.08), state_info)
         p_d2 = HumanStateFactory.apply_fatigue(random.uniform(0.05, 0.12), state_info)
         r_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.03, 0.07), state_info)
-        r_d2 = HumanStateFactory.apply_fatigue(random.uniform(0.04, 0.09), state_info)
         
         # Alt DOWN
         keyboard.press('alt')
         time.sleep(p_d1)
-        
         # Esc DOWN
         keyboard.press('esc')
         time.sleep(p_d2)
-        
         # Esc UP
         keyboard.release('esc')
         time.sleep(r_d1)
-        
         # Alt UP
         keyboard.release('alt')
         
@@ -412,13 +492,37 @@ def switch_maple_windows():
         print(t('log_focus_delay', focus_delay * 1000))
         time.sleep(focus_delay)
         
-        # Optional attack key
+        # --- Handle Key Scheduling Logic ---
+        keys_to_press = []
+        
+        # 1. Check original attack key
         if attack_key:
-            attack_press = HumanStateFactory.apply_fatigue(random.uniform(0.06, 0.14), state_info)
-            print(t('log_attack', attack_key, attack_press * 1000))
-            keyboard.press(attack_key)
-            time.sleep(attack_press)
-            keyboard.release(attack_key)
+            keys_to_press.append(attack_key)
+            
+        # 2. Check extra scheduled keys (each with its own timeline)
+        for key_name, interval_secs in extra_keys_config.items():
+            last_time = last_extra_trigger_times.get(key_name, 0)
+            if last_time == 0 or (current_time - last_time) >= interval_secs:
+                keys_to_press.append(key_name)
+                last_extra_trigger_times[key_name] = current_time
+
+        # Shuffle for human-like randomness when pressing multiple keys
+        random.shuffle(keys_to_press)
+        
+        for k in keys_to_press:
+            key_press_dur = HumanStateFactory.apply_fatigue(random.uniform(0.06, 0.14), state_info)
+            if k == attack_key:
+                print(t('log_attack', k, key_press_dur * 1000))
+            else:
+                print(t('pressing_extra_key', k))
+            
+            keyboard.press(k)
+            time.sleep(key_press_dur)
+            keyboard.release(k)
+            
+            # Tiny gap between keys
+            if len(keys_to_press) > 1:
+                time.sleep(random.uniform(0.15, 0.35))
         
         # Human jitter between window cycles
         if i < num_cycles - 1:
@@ -449,6 +553,10 @@ def click_maple_windows():
     
     speed_level = config.get('mouse_speed_level', DEFAULT_MOUSE_SPEED_LEVEL)
     base_duration = speed_map.get(speed_level, 0.5)
+
+    # Get a single state for this cycle to ensure consistency across windows
+    state_key, state_info = HumanStateFactory.get_random_state()
+    print(f"\n{t('log_human_state', t('state_' + state_key), state_info['factor'])}")
 
     try:
         # Get all current MapleRoyals windows
@@ -526,17 +634,23 @@ def click_maple_windows():
                     window_left, window_top = window.left, window.top
                     window_width, window_height = window.width, window.height
 
-                    offset_x = int(random.uniform(-0.3, 0.3) * window_width)
-                    offset_y = int(random.uniform(-0.3, 0.3) * window_height)
+                    # Offset affected by fatigue (larger variance when tired)
+                    offset_factor = 0.3 * state_info['factor']
+                    offset_x = int(random.uniform(-offset_factor, offset_factor) * window_width)
+                    offset_y = int(random.uniform(-offset_factor, offset_factor) * window_height)
 
                     click_x = window_left + window_width // 2 + offset_x
                     click_y = window_top + window_height // 2 + offset_y
 
-                    move_duration = random.uniform(0.3, 0.8)
+                    # Move duration affected by fatigue factory
+                    move_duration = HumanStateFactory.apply_fatigue(base_duration, state_info)
 
                     import pyautogui
                     pyautogui.moveTo(click_x, click_y, duration=move_duration)
-                    time.sleep(random.uniform(0.05, 0.15))
+                    
+                    # Click delay affected by fatigue
+                    click_delay = HumanStateFactory.apply_fatigue(random.uniform(0.05, 0.15), state_info)
+                    time.sleep(click_delay)
                     pyautogui.click()
                     time.sleep(0.2)
 
@@ -792,6 +906,16 @@ def command_listener():
                 print(t('countdown_display', config['countdown_seconds']))
                 print(f"{t('type_setup')}\n")
 
+            elif cmd == '/coffee':
+                print(f"\n{t('easter_egg_coffee')}")
+                # Secretly boost energized/focused weight
+                HumanStateFactory.STATES['energized']['weight'] = 40
+                HumanStateFactory.STATES['focused']['weight'] = 40
+                HumanStateFactory.STATES['normal']['weight'] = 10
+                HumanStateFactory.STATES['tired']['weight'] = 5
+                HumanStateFactory.STATES['drowsy']['weight'] = 5
+                print("✨ [Maru Mode] Current system status is now highly alert!")
+
             elif cmd in ['/language', '/lang']:
                 print("\n" + "="*50)
                 i18n.select_language()
@@ -808,10 +932,27 @@ def command_listener():
             pass
 
 def main():
-    global config
+    global config, tray_icon, console_visible
 
     # OTA check
     ota.run_ota_flow()
+
+    # Start system tray icon if available
+    if TRAY_AVAILABLE:
+        def on_tray_exit():
+            global tray_icon
+            if tray_icon:
+                tray_icon.stop()
+            os._exit(0)
+
+        tray_icon = create_tray_icon(
+            on_exit_callback=on_tray_exit,
+            restart_callback=start_timer,
+            stop_callback=stop_timer
+        )
+        
+        t_thread = threading.Thread(target=tray_thread_func, args=(tray_icon,), daemon=True)
+        t_thread.start()
 
     # Language selection (only on first run or if not in config)
     saved_config = load_config()
