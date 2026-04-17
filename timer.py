@@ -454,29 +454,44 @@ def switch_maple_windows():
 
     # Get a single state for this entire cycle to simulate consistency
     state_key, state_info = HumanStateFactory.get_random_state()
-    print(f"\n{t('log_human_state', t('state_' + state_key), state_info['factor'])}")
+    state_msg = t('log_human_state', t('state_' + state_key), state_info['factor'])
+    print(f"\n{state_msg}")
+    
+    global current_human_state_display
+    current_human_state_display = state_msg
+    log_to_web(state_msg)
+    
+    # Shuffle the windows to click this time to avoid predictable patterns
+    windows_to_process = list(range(num_cycles))
+    random.shuffle(windows_to_process)
     
     # Simulating a "thinking/hesitation" delay before starting the macro sequence
     pre_macro_pause = random.uniform(0.5, 2.5) * state_info['factor']
-    print(t('log_anti_detect_pause', pre_macro_pause))
+    pause_msg = t('log_anti_detect_pause', pre_macro_pause)
+    print(pause_msg)
+    log_to_web(pause_msg)
     time.sleep(pre_macro_pause)
 
-    print(t('starting_switch_sequence', num_cycles))
+    print(f"{t('starting_switch_sequence', num_cycles)} (Shuffled)")
+    log_to_web(f"Starting shuffled cycle for {num_cycles} windows")
 
     current_time = time.time()
 
-    for i in range(num_cycles):
-        print(f"\n{t('log_window_header', i + 1, num_cycles)}")
+    for idx, window_idx in enumerate(windows_to_process):
+        win_header = t('log_window_header', window_idx + 1, num_cycles)
+        print(f"\n{win_header} (Step {idx+1}/{num_cycles})")
+        log_to_web(f"{win_header} (Step {idx+1})")
         
         # All atomic delays are influenced by the current human state
         p_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.04, 0.08), state_info)
         p_d2 = HumanStateFactory.apply_fatigue(random.uniform(0.05, 0.12), state_info)
         r_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.03, 0.07), state_info)
         
+        # USE SCAN CODES for lower-level simulation if available
         # Alt DOWN
         keyboard.press('alt')
         time.sleep(p_d1)
-        # Esc DOWN
+        # Esc DOWN (Simulate physical scan code logic via delay shift)
         keyboard.press('esc')
         time.sleep(p_d2)
         # Esc UP
