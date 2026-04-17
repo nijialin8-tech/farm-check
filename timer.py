@@ -450,6 +450,10 @@ def click_maple_windows():
     speed_level = config.get('mouse_speed_level', DEFAULT_MOUSE_SPEED_LEVEL)
     base_duration = speed_map.get(speed_level, 0.5)
 
+    # Get a single state for this cycle to ensure consistency across windows
+    state_key, state_info = HumanStateFactory.get_random_state()
+    print(f"\n{t('log_human_state', t('state_' + state_key), state_info['factor'])}")
+
     try:
         # Get all current MapleRoyals windows
         all_windows = window_utils.get_maple_windows()
@@ -526,17 +530,23 @@ def click_maple_windows():
                     window_left, window_top = window.left, window.top
                     window_width, window_height = window.width, window.height
 
-                    offset_x = int(random.uniform(-0.3, 0.3) * window_width)
-                    offset_y = int(random.uniform(-0.3, 0.3) * window_height)
+                    # Offset affected by fatigue (larger variance when tired)
+                    offset_factor = 0.3 * state_info['factor']
+                    offset_x = int(random.uniform(-offset_factor, offset_factor) * window_width)
+                    offset_y = int(random.uniform(-offset_factor, offset_factor) * window_height)
 
                     click_x = window_left + window_width // 2 + offset_x
                     click_y = window_top + window_height // 2 + offset_y
 
-                    move_duration = random.uniform(0.3, 0.8)
+                    # Move duration affected by fatigue factory
+                    move_duration = HumanStateFactory.apply_fatigue(base_duration, state_info)
 
                     import pyautogui
                     pyautogui.moveTo(click_x, click_y, duration=move_duration)
-                    time.sleep(random.uniform(0.05, 0.15))
+                    
+                    # Click delay affected by fatigue
+                    click_delay = HumanStateFactory.apply_fatigue(random.uniform(0.05, 0.15), state_info)
+                    time.sleep(click_delay)
                     pyautogui.click()
                     time.sleep(0.2)
 
