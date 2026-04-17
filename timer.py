@@ -10,6 +10,15 @@ import i18n
 import ota
 from i18n import t  # Translation function
 
+# System Tray modules
+try:
+    import pystray
+    from pystray import MenuItem as item
+    from PIL import Image, ImageDraw
+    TRAY_AVAILABLE = True
+except ImportError:
+    TRAY_AVAILABLE = False
+
 # Windows-specific module (only available on Windows)
 try:
     import winsound
@@ -25,6 +34,52 @@ try:
 except ImportError:
     WINDOW_AUTOMATION_AVAILABLE = False
     print(t('warning_automation'))
+
+import ctypes
+
+def hide_console():
+    """Hide the console window."""
+    whnd = ctypes.windll.kernel32.GetConsoleWindow()
+    if whnd != 0:
+        ctypes.windll.user32.ShowWindow(whnd, 0)
+
+def show_console():
+    """Show the console window."""
+    whnd = ctypes.windll.kernel32.GetConsoleWindow()
+    if whnd != 0:
+        ctypes.windll.user32.ShowWindow(whnd, 5)
+
+def create_tray_icon(on_exit_callback, restart_callback, stop_callback):
+    """Create a system tray icon."""
+    if not TRAY_AVAILABLE:
+        return None
+
+    # Generate a simple icon (green circle or similar)
+    image = Image.new('RGB', (64, 64), color='black')
+    dc = ImageDraw.Draw(image)
+    dc.ellipse([8, 8, 56, 56], fill='green', outline='white')
+
+    def toggle_console(icon, item):
+        global console_visible
+        if console_visible:
+            hide_console()
+            console_visible = False
+        else:
+            show_console()
+            console_visible = True
+
+    menu = pystray.Menu(
+        item(lambda text: t('tray_show') if not console_visible else t('tray_hide'), toggle_console),
+        item(t('tray_start'), lambda icon, item: restart_callback()),
+        item(t('tray_stop'), lambda icon, item: stop_callback()),
+        item(t('tray_exit'), lambda icon, item: on_exit_callback())
+    )
+
+    icon = pystray.Icon("farm_check", image, "MapleRoyals Timer", menu)
+    return icon
+
+def tray_thread_func(icon):
+    icon.run()
 
 # --- Default settings ---
 DEFAULT_TRIGGER_KEY = 'page up'
@@ -47,6 +102,8 @@ stop_progress = False  # Flag to stop progress thread
 config = {}
 cycle_count = 0
 dynamic_base_offset = 0
+tray_icon = None
+console_visible = True
 
 class HumanStateFactory:
     """Factory to simulate various human physical/mental states."""
@@ -818,10 +875,27 @@ def command_listener():
             pass
 
 def main():
-    global config
+    global config, tray_icon, console_visible
 
     # OTA check
     ota.run_ota_flow()
+
+    # Start system tray icon if available
+    if TRAY_AVAILABLE:
+        def on_tray_exit():
+            global tray_icon
+            if tray_icon:
+                tray_icon.stop()
+            os._exit(0)
+
+        tray_icon = create_tray_icon(
+            on_exit_callback=on_tray_exit,
+            restart_callback=start_timer,
+            stop_callback=stop_timer
+        )
+        
+        t_thread = threading.Thread(target=tray_thread_func, args=(tray_icon,), daemon=True)
+        t_thread.start()
 
     # Language selection (only on first run or if not in config)
     saved_config = load_config()

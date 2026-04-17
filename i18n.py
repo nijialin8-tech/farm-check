@@ -201,11 +201,22 @@ LANGUAGES = {
         'state_normal': 'Normal',
         'state_tired': 'Tired',
         'state_drowsy': 'Drowsy',
+        'state_energized': 'Energized',
 
         # Anti-Detection
         'log_anti_detect_pause': '🛡️ Simulating human thought... ({:.1f}s)',
         'log_long_break': '🛌 Forced human break for physical recovery ({:.1f} mins)',
         'log_dynamic_shift': '🔄 Pattern shifting: {:+d}s',
+
+        # System Tray
+        'tray_show': 'Show Console',
+        'tray_hide': 'Hide Console',
+        'tray_start': 'Start/Reset Timer',
+        'tray_stop': 'Stop Timer',
+        'tray_exit': 'Exit Program',
+        'tray_status_running': 'Running (Left: {})',
+        'tray_status_idle': 'Idle',
+        'console_hidden': 'Console hidden. You can open it from the system tray.',
     },
     'zh_TW': {
         # Language selection
@@ -407,11 +418,22 @@ LANGUAGES = {
         'state_normal': '一般狀態',
         'state_tired': '有點疲累',
         'state_drowsy': '精神恍惚',
+        'state_energized': '精神煥發 (神速)',
 
         # Anti-Detection
         'log_anti_detect_pause': '🛡️ 模擬人類思考中... ({:.1f}秒)',
         'log_long_break': '🛌 人類體力不支，正在進行中途休息 ({:.1f}分鐘)',
         'log_dynamic_shift': '🔄 偵測到節奏模式，實施動態相位偏移: {:+d}秒',
+
+        # System Tray
+        'tray_show': '顯示控制台',
+        'tray_hide': '隱藏控制台',
+        'tray_start': '開始/重置計時',
+        'tray_stop': '停止計時',
+        'tray_exit': '結束程式',
+        'tray_status_running': '計時中 (剩餘: {})',
+        'tray_status_idle': '閒置中',
+        'console_hidden': '控制台已隱藏。您可以透過右下角系統匣開啟。',
     }
 }
 

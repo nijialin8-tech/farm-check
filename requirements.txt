@@ -1,6 +1,6 @@
-keyboard==0.13.5
-pyinstaller==6.11.1
-pygetwindow==0.0.9
-pyautogui==0.9.54
-pywin32==306; sys_platform == 'win32'
-pytest==7.4.3
+keyboard
+pygetwindow
+pyautogui
+pystray
+Pillow
+requests
