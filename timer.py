@@ -104,6 +104,30 @@ cycle_count = 0
 dynamic_base_offset = 0
 tray_icon = None
 console_visible = True
+# Store last trigger times for independent key schedules
+last_extra_trigger_times = {} 
+# Web shared state
+web_logs = []
+current_human_state_display = "Idle"
+
+def get_local_ip():
+    """Find the local IP address for LAN access display."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
+
+def log_to_web(message):
+    """Add a line to the web-viewable logs."""
+    global web_logs
+    web_logs.append(f"[{time.strftime('%H:%M:%S')}] {message}")
+    # Keep only last 100 lines
+    if len(web_logs) > 100:
+        web_logs.pop(0)
 
 class HumanStateFactory:
     """Factory to simulate various human physical/mental states."""
