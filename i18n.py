@@ -221,6 +221,13 @@ LANGUAGES = {
         # Easter Eggs
         'easter_egg_coffee': '☕ Maru is grinding virtual beans for you... (Focused state chance increased!)',
         'ota_success_banner': '🎊 OTA Update successful! Applied codename: {}',
+
+        # Extra Keys
+        'extra_keys_prompt': 'Add high-level custom keys (e.g. key:cooldown)?',
+        'extra_keys_instruction': '  Format: key1:seconds1,key2:seconds2 (e.g. x:30,v:15)',
+        'extra_keys_skip': '  Press Enter to skip',
+        'config_extra_keys': '  Extra Keys: {}',
+        'pressing_extra_key': '  -> Pressing extra scheduled key: [{}]',
     },
     'zh_TW': {
         # Language selection
@@ -442,6 +449,13 @@ LANGUAGES = {
         # Easter Eggs
         'easter_egg_coffee': '☕ Maru 正在為您研磨擬人化咖啡豆...（進入專注狀態機率提高！）',
         'ota_success_banner': '🎊 OTA 線上更新成功！本次更新代號：{}',
+
+        # Extra Keys
+        'extra_keys_prompt': '是否增加額外的自定義排程按鍵？',
+        'extra_keys_instruction': '  格式：按鍵1:秒數1,按鍵2:秒數2（範例：x:30,v:15）',
+        'extra_keys_skip': '  按 Enter 跳過',
+        'config_extra_keys': '  額外按鍵排程: {}',
+        'pressing_extra_key': '  -> 正在按下排程按鍵：[{}]',
     }
 }
 

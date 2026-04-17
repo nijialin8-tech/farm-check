@@ -426,6 +426,7 @@ def switch_maple_windows():
 
     base_interval = config.get('switch_interval_base', DEFAULT_SWITCH_INTERVAL)
     attack_key = config.get('attack_key')
+    extra_keys_config = config.get('extra_keys', {})
 
     # Get a single state for this entire cycle to simulate consistency
     state_key, state_info = HumanStateFactory.get_random_state()
@@ -438,6 +439,8 @@ def switch_maple_windows():
 
     print(t('starting_switch_sequence', num_cycles))
 
+    current_time = time.time()
+
     for i in range(num_cycles):
         print(f"\n{t('log_window_header', i + 1, num_cycles)}")
         
@@ -445,20 +448,16 @@ def switch_maple_windows():
         p_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.04, 0.08), state_info)
         p_d2 = HumanStateFactory.apply_fatigue(random.uniform(0.05, 0.12), state_info)
         r_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.03, 0.07), state_info)
-        r_d2 = HumanStateFactory.apply_fatigue(random.uniform(0.04, 0.09), state_info)
         
         # Alt DOWN
         keyboard.press('alt')
         time.sleep(p_d1)
-        
         # Esc DOWN
         keyboard.press('esc')
         time.sleep(p_d2)
-        
         # Esc UP
         keyboard.release('esc')
         time.sleep(r_d1)
-        
         # Alt UP
         keyboard.release('alt')
         
@@ -469,13 +468,37 @@ def switch_maple_windows():
         print(t('log_focus_delay', focus_delay * 1000))
         time.sleep(focus_delay)
         
-        # Optional attack key
+        # --- Handle Key Scheduling Logic ---
+        keys_to_press = []
+        
+        # 1. Check original attack key
         if attack_key:
-            attack_press = HumanStateFactory.apply_fatigue(random.uniform(0.06, 0.14), state_info)
-            print(t('log_attack', attack_key, attack_press * 1000))
-            keyboard.press(attack_key)
-            time.sleep(attack_press)
-            keyboard.release(attack_key)
+            keys_to_press.append(attack_key)
+            
+        # 2. Check extra scheduled keys (each with its own timeline)
+        for key_name, interval_secs in extra_keys_config.items():
+            last_time = last_extra_trigger_times.get(key_name, 0)
+            if last_time == 0 or (current_time - last_time) >= interval_secs:
+                keys_to_press.append(key_name)
+                last_extra_trigger_times[key_name] = current_time
+
+        # Shuffle for human-like randomness when pressing multiple keys
+        random.shuffle(keys_to_press)
+        
+        for k in keys_to_press:
+            key_press_dur = HumanStateFactory.apply_fatigue(random.uniform(0.06, 0.14), state_info)
+            if k == attack_key:
+                print(t('log_attack', k, key_press_dur * 1000))
+            else:
+                print(t('pressing_extra_key', k))
+            
+            keyboard.press(k)
+            time.sleep(key_press_dur)
+            keyboard.release(k)
+            
+            # Tiny gap between keys
+            if len(keys_to_press) > 1:
+                time.sleep(random.uniform(0.15, 0.35))
         
         # Human jitter between window cycles
         if i < num_cycles - 1:
