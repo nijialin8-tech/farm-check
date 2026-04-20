@@ -5,6 +5,7 @@ import os
 import sys
 import json
 import random
+import socket
 import window_utils
 import i18n
 import ota
@@ -130,40 +131,43 @@ def log_to_web(message):
         web_logs.pop(0)
 
 class HumanStateFactory:
-    """Factory to simulate various human physical/mental states."""
+    """Factory for human state simulation (Fatigue removed)."""
     
     STATES = {
-        'focused': {'factor': 0.7, 'jitter': 0.1, 'weight': 15},
-        'normal':  {'factor': 1.0, 'jitter': 0.2, 'weight': 50},
-        'tired':   {'factor': 1.6, 'jitter': 0.4, 'weight': 25},
-        'drowsy':  {'factor': 3.5, 'jitter': 1.2, 'weight': 10}
+        'normal':  {'factor': 1.0, 'jitter': 0.0, 'weight': 100}
     }
 
     @classmethod
     def get_random_state(cls):
-        state_names = list(cls.STATES.keys())
-        weights = [cls.STATES[s]['weight'] for s in state_names]
-        state_key = random.choices(state_names, weights=weights, k=1)[0]
-        return state_key, cls.STATES[state_key]
+        return 'normal', cls.STATES['normal']
 
     @classmethod
     def apply_fatigue(cls, base_delay, state_info):
-        """Apply fatigue factor and high-entropy jitter to a base delay."""
-        factor = state_info['factor']
-        jitter_range = state_info['jitter']
-        
-        # Calculate a personalized delay based on the state
-        # Uses multiple random distributions for more human-like 'messiness'
-        state_modifier = factor + random.uniform(-jitter_range, jitter_range)
-        messiness = (random.random() * 0.15) if random.random() > 0.8 else 0
-        
-        return base_delay * (state_modifier + messiness)
+        """No fatigue applied."""
+        return base_delay
 
     @classmethod
     def should_take_long_break(cls):
-        """Randomly decide if a long break (5-12 mins) is needed every ~10-20 cycles."""
-        # 3% chance per cycle (~ once every 2-3 hours @ 3 min cycles)
-        return random.random() < 0.03
+        """Disabled."""
+        return False
+
+def release_all_keys():
+    """Safety function to release managed keys."""
+    # List of keys that might get stuck
+    managed_keys = ['alt', 'esc', 'shift', 'ctrl', 'win']
+    
+    # Add config-specific keys
+    if config:
+        if config.get('trigger_key'): managed_keys.append(config['trigger_key'])
+        if config.get('stop_key'): managed_keys.append(config['stop_key'])
+        if config.get('attack_key'): managed_keys.append(config['attack_key'])
+    
+    for k in set(managed_keys):
+        try:
+            if keyboard.is_pressed(k):
+                keyboard.release(k)
+        except:
+            pass
 
 def get_config_path():
     """Get the config file path in user's home directory or current directory."""
@@ -334,7 +338,7 @@ def setup_config():
 
     if countdown_input:
         try:
-            countdown_seconds = int(countdown_input)
+            countdown_seconds = float(countdown_input)
             if countdown_seconds <= 0:
                 print(t('countdown_error_positive'))
                 return None
@@ -345,13 +349,13 @@ def setup_config():
         countdown_seconds = DEFAULT_COUNTDOWN_SECONDS
 
     print(f"\n{t('random_offset_title')}")
-    print(t('random_offset_example', countdown_seconds-5, countdown_seconds+5))
+    print(t('random_offset_example', countdown_seconds-0.5, countdown_seconds+0.5))
     print(f"{t('random_offset_prompt', DEFAULT_RANDOM_OFFSET_SECONDS)}: ", end='', flush=True)
     offset_input = input().strip()
 
     if offset_input:
         try:
-            random_offset = int(offset_input)
+            random_offset = float(offset_input)
             if random_offset < 0:
                 print(t('offset_error_negative'))
                 return None
@@ -364,51 +368,47 @@ def setup_config():
     else:
         random_offset = DEFAULT_RANDOM_OFFSET_SECONDS
 
-    # Ask about auto-click feature
+    # --- Mode Selection (Separated Paths) ---
+    print(f"\n{'='*20} MODE SELECTION {'='*20}")
+    print("1. Traditional Timer Only (Sound Alert only)")
+    print("2. Auto Switch Mode (Alt+Esc macro)")
+    print("3. Auto Click Mode (Mouse Click macro)")
+    print("Select Path (1-3): ", end='', flush=True)
+    
+    mode_selection = input().strip()
     auto_click = False
+    auto_switch = False
     selected_windows = None
+    switch_interval = DEFAULT_SWITCH_INTERVAL
+    attack_key = None
 
-    if WINDOW_AUTOMATION_AVAILABLE:
-        print(f"\n{t('auto_click_prompt')}")
-        print(f"{t('auto_click_enable')}: ", end='', flush=True)
-        auto_click_input = input().strip().lower()
-        auto_click = (auto_click_input == '/enable')
+    if mode_selection == '2':
+        auto_switch = True
+        # Ask about auto-switch details
+        print(f"\n{t('switch_interval_prompt')}: ", end='', flush=True)
+        si_input = input().strip()
+        try:
+            switch_interval = float(si_input) if si_input else DEFAULT_SWITCH_INTERVAL
+            if switch_interval < 0.1: switch_interval = 0.1
+        except ValueError:
+            switch_interval = DEFAULT_SWITCH_INTERVAL
 
-        if auto_click:
+        print(f"\n{t('attack_key_prompt')}: ", end='', flush=True)
+        attack_key_event = keyboard.read_event(suppress=True)
+        while attack_key_event.event_type != 'down':
+            attack_key_event = keyboard.read_event(suppress=True)
+        attack_key = None if attack_key_event.name == 'enter' else attack_key_event.name
+        if attack_key: print(t('selected', attack_key))
+
+    elif mode_selection == '3':
+        auto_click = True
+        if WINDOW_AUTOMATION_AVAILABLE:
             selected_windows = select_windows()
-            # If user cancelled selection, disable auto-click
             if selected_windows is False:
                 auto_click = False
                 selected_windows = None
-    else:
-        print(f"\n{t('auto_click_unavailable')}")
-
-    # Ask about auto-switch (Alt+Esc)
-    print(f"\n{t('auto_switch_prompt')}")
-    print(f"{t('auto_switch_enable')}: ", end='', flush=True)
-    auto_switch_input = input().strip().lower()
-    auto_switch = (auto_switch_input == '/enable')
-
-    # Ask about switch interval
-    print(f"\n{t('switch_interval_prompt')}: ", end='', flush=True)
-    switch_interval_input = input().strip()
-    try:
-        switch_interval = float(switch_interval_input) if switch_interval_input else DEFAULT_SWITCH_INTERVAL
-        if switch_interval < 0.1:
-            switch_interval = 0.1
-    except ValueError:
-        switch_interval = DEFAULT_SWITCH_INTERVAL
-
-    # Ask about attack key
-    print(f"\n{t('attack_key_prompt')}: ", end='', flush=True)
-    attack_key_event = keyboard.read_event(suppress=True)
-    while attack_key_event.event_type != 'down':
-        attack_key_event = keyboard.read_event(suppress=True)
-    
-    # Use Enter (name='enter') as skipped indicator
-    attack_key = None if attack_key_event.name == 'enter' else attack_key_event.name
-    if attack_key:
-        print(t('selected', attack_key))
+        else:
+            print(f"\n{t('auto_click_unavailable')}")
 
     # Ask about manual trigger after cycle
     print(f"\n{t('wait_for_trigger_prompt')}")
@@ -482,23 +482,26 @@ def switch_maple_windows():
         print(f"\n{win_header} (Step {idx+1}/{num_cycles})")
         log_to_web(f"{win_header} (Step {idx+1})")
         
-        # All atomic delays are influenced by the current human state
-        p_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.04, 0.08), state_info)
-        p_d2 = HumanStateFactory.apply_fatigue(random.uniform(0.05, 0.12), state_info)
-        r_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.03, 0.07), state_info)
-        
-        # USE SCAN CODES for lower-level simulation if available
-        # Alt DOWN
-        keyboard.press('alt')
-        time.sleep(p_d1)
-        # Esc DOWN (Simulate physical scan code logic via delay shift)
-        keyboard.press('esc')
-        time.sleep(p_d2)
-        # Esc UP
-        keyboard.release('esc')
-        time.sleep(r_d1)
-        # Alt UP
-        keyboard.release('alt')
+        try:
+            # All atomic delays are influenced by the current human state
+            p_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.04, 0.08), state_info)
+            p_d2 = HumanStateFactory.apply_fatigue(random.uniform(0.05, 0.12), state_info)
+            r_d1 = HumanStateFactory.apply_fatigue(random.uniform(0.03, 0.07), state_info)
+            
+            # Alt DOWN
+            keyboard.press('alt')
+            time.sleep(p_d1)
+            # Esc DOWN
+            keyboard.press('esc')
+            time.sleep(p_d2)
+            # Esc UP
+            keyboard.release('esc')
+            time.sleep(r_d1)
+            # Alt UP
+            keyboard.release('alt')
+        finally:
+            # Safety cleanup
+            release_all_keys()
         
         print(t('log_alt_esc', p_d2 * 1000, r_d1 * 1000))
         
@@ -525,22 +528,25 @@ def switch_maple_windows():
         random.shuffle(keys_to_press)
         
         for k in keys_to_press:
-            key_press_dur = HumanStateFactory.apply_fatigue(random.uniform(0.06, 0.14), state_info)
-            if k == attack_key:
-                print(t('log_attack', k, key_press_dur * 1000))
-            else:
-                print(t('pressing_extra_key', k))
-            
-            keyboard.press(k)
-            time.sleep(key_press_dur)
-            keyboard.release(k)
+            try:
+                key_press_dur = HumanStateFactory.apply_fatigue(random.uniform(0.06, 0.14), state_info)
+                if k == attack_key:
+                    print(t('log_attack', k, key_press_dur * 1000))
+                else:
+                    print(t('pressing_extra_key', k))
+                
+                keyboard.press(k)
+                time.sleep(key_press_dur)
+                keyboard.release(k)
+            finally:
+                release_all_keys()
             
             # Tiny gap between keys
             if len(keys_to_press) > 1:
                 time.sleep(random.uniform(0.15, 0.35))
         
         # Human jitter between window cycles
-        if i < num_cycles - 1:
+        if idx < num_cycles - 1:
             # The base interval is already randomized, but we also apply fatigue factor
             state_jitter = state_info['factor'] * random.uniform(0.7, 1.3)
             jitter_delay = base_interval * state_jitter
@@ -749,15 +755,17 @@ def on_timeout():
         return
 
     # Auto-restart countdown with ESC to cancel
+    # For very short timers, skip or shorten the restart wait to avoid timeout issues
+    wait_duration = 2.0 if config['countdown_seconds'] < 5 else 5.0
+    
     print("\n" + "="*50)
     print(t('will_auto_restart'))
     print(t('press_esc_configure'))
     print("="*50)
 
-    # Check for ESC key for 5 seconds
+    # Check for ESC key
     esc_pressed = False
     start_wait = time.time()
-    wait_duration = 5.0
 
     while time.time() - start_wait < wait_duration:
         remaining = wait_duration - (time.time() - start_wait)
@@ -838,15 +846,15 @@ def start_timer():
 
     # Calculate actual countdown with random offset AND dynamic base offset
     base_time = config['countdown_seconds'] + dynamic_base_offset
-    offset = config.get('random_offset_seconds', 0)
+    offset = float(config.get('random_offset_seconds', 0))
 
     if offset > 0:
-        # Random offset between -offset and +offset
-        random_offset = random.randint(-offset, offset)
-        actual_countdown = max(10, base_time + random_offset)
+        # Random offset between -offset and +offset (supports float/ms)
+        random_offset = random.uniform(-offset, offset)
+        actual_countdown = max(0.1, base_time + random_offset)
         print(f"\n{t('timer_started', actual_countdown, base_time, random_offset)}")
     else:
-        actual_countdown = max(10, base_time)
+        actual_countdown = max(0.1, base_time)
         print(f"\n{t('timer_started_simple', actual_countdown)}")
 
     # Start timer and progress bar
@@ -863,6 +871,9 @@ def stop_timer():
     if current_timer is not None:
         current_timer.cancel()
         current_timer = None
+
+    # Safety: release all managed keys
+    release_all_keys()
 
     # Stop progress bar
     stop_progress = True
