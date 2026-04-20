@@ -1,0 +1,12 @@
+{
+  "version": "1.0.8",
+  "codename": "Caffeine Rush ☕",
+  "banner": "      .---.\n     |o_o |\n     |:_/ |\n    //   \\ \\\n   (|     | )\n  /\\'\\_   _/`\\\n  \\___)=(___/",
+  "joke": "Why did the Maple leaf go to the doctor? Because it had autumn-itis!",
+  "files": {
+    "timer.py": "https://raw.githubusercontent.com/nijialin8-tech/farm-check/main/timer.py",
+    "i18n.py": "https://raw.githubusercontent.com/nijialin8-tech/farm-check/main/i18n.py",
+    "window_utils.py": "https://raw.githubusercontent.com/nijialin8-tech/farm-check/main/window_utils.py",
+    "ota.py": "https://raw.githubusercontent.com/nijialin8-tech/farm-check/main/ota.py"
+  }
+}

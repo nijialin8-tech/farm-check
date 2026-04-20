@@ -5,6 +5,7 @@ import os
 import sys
 import json
 import random
+import socket
 import window_utils
 import i18n
 import ota
@@ -545,7 +546,7 @@ def switch_maple_windows():
                 time.sleep(random.uniform(0.15, 0.35))
         
         # Human jitter between window cycles
-        if i < num_cycles - 1:
+        if idx < num_cycles - 1:
             # The base interval is already randomized, but we also apply fatigue factor
             state_jitter = state_info['factor'] * random.uniform(0.7, 1.3)
             jitter_delay = base_interval * state_jitter

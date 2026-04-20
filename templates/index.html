@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Farm Check Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #121212; color: #e0e0e0; margin: 0; padding: 20px; }
+        .card { background: #1e1e1e; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        h1 { color: #4caf50; margin-top: 0; font-size: 24px; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+        .status-running { background: #2e7d32; color: #fff; }
+        .status-idle { background: #424242; color: #e0e0e0; }
+        .btn { border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: opacity 0.2s; font-weight: bold; margin-right: 10px; }
+        .btn-primary { background: #4caf50; color: white; }
+        .btn-danger { background: #f44336; color: white; }
+        .field { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #aaa; font-size: 14px; }
+        input[type="number"], input[type="text"], select { width: 100%; padding: 10px; background: #2c2c2c; border: 1px solid #444; border-radius: 4px; color: white; box-sizing: border-box; }
+        .log-area { background: #000; border: 1px solid #333; padding: 10px; border-radius: 4px; height: 300px; overflow-y: auto; font-family: "Cascadia Code", "Consolas", monospace; font-size: 12px; line-height: 1.5; color: #0f0; }
+        .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>🚜 Farm Check <small style="font-size: 12px; color: #888;">v{{ version }}</small></h1>
+    
+    <div class="card">
+        <div id="status_badge" class="status-badge status-idle">IDLE</div>
+        <div id="timer_display" style="font-size: 32px; font-weight: bold; margin: 10px 0;">00:00</div>
+        <div id="state_info" style="color: #ff9800; font-size: 14px; margin-bottom: 20px;">Human State: Waiting...</div>
+        
+        <button onclick="sendAction('start')" class="btn btn-primary">START / RESET</button>
+        <button onclick="sendAction('stop')" class="btn btn-danger">STOP</button>
+    </div>
+
+    <div class="card">
+        <h3>⚙️ Settings</h3>
+        <div class="field">
+            <label>Countdown Seconds</label>
+            <input type="number" id="countdown_seconds" value="{{ config.countdown_seconds }}">
+        </div>
+        <div class="field">
+            <label>Attack Key</label>
+            <input type="text" id="attack_key" value="{{ config.attack_key or '' }}" placeholder="None">
+        </div>
+        <div class="field">
+            <label>Extra Keys (key:s,key:s)</label>
+            <input type="text" id="extra_keys" value="{{ extra_keys_str }}" placeholder="e.g. x:30,v:15">
+        </div>
+        <button onclick="saveSettings()" class="btn btn-primary" style="width: 100%;">SAVE SETTINGS</button>
+    </div>
+
+    <div class="card">
+        <h3>📊 Real-time Log</h3>
+        <div id="log_area" class="log-area">
+            System initialized...<br>
+        </div>
+    </div>
+
+    <div class="footer">
+        Powered by Maru AI @ nijialin8-tech
+    </div>
+
+    <script>
+        function updateStatus() {
+            fetch('/api/status')
+                .then(r => r.json())
+                .then(data => {
+                    const badge = document.getElementById('status_badge');
+                    badge.innerText = data.is_running ? 'RUNNING' : 'IDLE';
+                    badge.className = 'status-badge ' + (data.is_running ? 'status-running' : 'status-idle');
+                    
+                    document.getElementById('timer_display').innerText = data.remaining_str;
+                    document.getElementById('state_info').innerText = '✨ ' + data.human_state;
+                    
+                    // Append new logs if any
+                    const logArea = document.getElementById('log_area');
+                    if (data.new_logs.length > 0) {
+                        data.new_logs.forEach(line => {
+                            logArea.innerHTML += line + '<br>';
+                        });
+                        logArea.scrollTop = logArea.scrollHeight;
+                    }
+                });
+        }
+
+        function sendAction(action) {
+            fetch('/api/action/' + action, { method: 'POST' });
+        }
+
+        function saveSettings() {
+            const body = {
+                countdown_seconds: parseInt(document.getElementById('countdown_seconds').value),
+                attack_key: document.getElementById('attack_key').value || null,
+                extra_keys_str: document.getElementById('extra_keys').value
+            };
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            }).then(() => alert('Settings saved and hot-reloaded!'));
+        }
+
+        setInterval(updateStatus, 1000);
+    </script>
+</body>
+</html>
